@@ -1,6 +1,6 @@
 # GitHub Actions Workflows for Unity Builder
 
-This directory contains GitHub Actions workflows for building the NomadGo SpatialVision Unity project.
+This directory contains GitHub Actions workflows for building the LHD Unity project.
 
 ## Available Workflows
 
