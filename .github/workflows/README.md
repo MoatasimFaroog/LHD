@@ -86,21 +86,22 @@ Build Unity for multiple platforms (Windows, Linux, WebGL)
 - `UNITY_PASSWORD` ✅ (Required / إلزامي)
 
 ### 5. **Acquire Unity License** (`activation.yml`)
-Generate Unity license activation file
+Unity license activation instructions
 
-الحصول على ترخيص Unity
+تعليمات الحصول على ترخيص Unity
 
 **Triggers / متى يعمل:** 
 - Manual only (`workflow_dispatch`)
 
-**Steps to use / خطوات الاستخدام:**
-1. Go to **Actions** tab / اذهب إلى تبويب Actions
-2. Select "Acquire Unity License" workflow
-3. Click "Run workflow" / اضغط على Run workflow
-4. Download the generated `.alf` artifact / حمل ملف .alf
-5. Upload it to https://license.unity3d.com/manual / ارفعه إلى الموقع
-6. Download the `.ulf` license file / حمل ملف .ulf
-7. Add contents as `UNITY_LICENSE` secret / أضفه كـ Secret
+**⚠️ Important / مهم:**
+This workflow now directs you to the updated activation documentation.
+
+هذا الـ workflow الآن يوجهك إلى توثيق التفعيل المحدث.
+
+**Steps to get Unity license / خطوات الحصول على ترخيص Unity:**
+1. Visit the official guide / قم بزيارة الدليل الرسمي: https://game.ci/docs/github/activation
+2. Follow the updated instructions / اتبع التعليمات المحدثة
+3. Add the license as `UNITY_LICENSE` secret / أضف الترخيص كـ Secret باسم UNITY_LICENSE
 
 **Required once / مطلوب مرة واحدة:** Only initially or when license expires / فقط في البداية أو عند انتهاء الترخيص
 
@@ -161,7 +162,6 @@ After build completes / بعد انتهاء البناء:
 - Node.js builds: 7 days / أيام
 - Web builds: 14 days / يوم
 - Unity builds: 14 days / يوم
-- Activation file: 5 days / أيام
 
 ---
 

@@ -42,21 +42,27 @@ git push -u origin main
 
 ## Step 2: Get Your Unity License
 
-### 2a. Run the Activation Workflow
-1. Go to your GitHub repository
-2. Click **Actions** tab
-3. Click **Acquire Unity License** on the left
-4. Click **Run workflow** > **Run workflow**
-5. Wait for it to finish
-6. Download the artifact file (`.alf`)
+### Important: Updated Activation Process
 
-### 2b. Activate the License
-1. Go to https://license.unity3d.com/manual
-2. Upload the `.alf` file
-3. Choose **Unity Personal** (or your license type)
-4. Download the `.ulf` license file
-5. Open the `.ulf` file with Notepad
-6. Copy ALL the contents
+⚠️ **The activation workflow has been updated.**
+
+Please follow the official GameCI activation documentation for complete instructions:
+
+🔗 **https://game.ci/docs/github/activation**
+
+The documentation provides the latest instructions for:
+- Getting your Unity license file (`.ulf`)
+- Setting up GitHub secrets
+- Activating Unity for CI/CD
+
+### Quick Summary
+
+After following the GameCI guide to obtain your Unity license file (`.ulf`):
+
+1. Go to your repository: **Settings > Secrets and variables > Actions > New repository secret**
+2. Add the license as `UNITY_LICENSE` secret (full contents of the `.ulf` file)
+3. Add your `UNITY_EMAIL` (Unity account email)
+4. Add your `UNITY_PASSWORD` (Unity account password)
 
 ---
 
