@@ -28,4 +28,6 @@ jobs:
           echo "ℹ️  سيوجهك الدليل الجديد خلال عملية الحصول على ترخيص Unity"
           echo "ℹ️  The new guide will walk you through the process of obtaining a Unity license"
           echo ""
+          echo "❌ This workflow is intentionally marked as failed to indicate it should not be used."
+          echo "❌ يتم وضع علامة على هذا الـ workflow كفاشل عمداً للإشارة إلى أنه لا ينبغي استخدامه."
           exit 1

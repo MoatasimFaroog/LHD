@@ -46,18 +46,18 @@ git push -u origin main
 
 ⚠️ **The activation workflow has been updated.**
 
-Please follow the official GameCI activation documentation:
+Please follow the official GameCI activation documentation for complete instructions:
 
 🔗 **https://game.ci/docs/github/activation**
 
 The documentation provides the latest instructions for:
-- Getting your Unity license
+- Getting your Unity license file (`.ulf`)
 - Setting up GitHub secrets
 - Activating Unity for CI/CD
 
 ### Quick Summary
 
-Once you have your Unity license file (`.ulf`):
+After following the GameCI guide to obtain your Unity license file (`.ulf`):
 
 1. Go to your repository: **Settings > Secrets and variables > Actions > New repository secret**
 2. Add the license as `UNITY_LICENSE` secret (full contents of the `.ulf` file)
