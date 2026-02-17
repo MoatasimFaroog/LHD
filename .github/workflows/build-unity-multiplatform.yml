@@ -1,0 +1,100 @@
+# بناء Unity لمنصات متعددة (Windows, macOS, Linux, WebGL)
+# Build Unity for Multiple Platforms (Windows, macOS, Linux, WebGL)
+
+name: Build Unity Multi-Platform
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'اختر المنصة للبناء / Select platform to build'
+        required: true
+        type: choice
+        options:
+          - StandaloneWindows64
+          - StandaloneOSX
+          - StandaloneLinux64
+          - WebGL
+          - All
+        default: 'All'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build for ${{ matrix.targetPlatform }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - ${{ github.event.inputs.platform == 'All' && 'StandaloneWindows64' || github.event.inputs.platform }}
+          - ${{ github.event.inputs.platform == 'All' && 'StandaloneLinux64' || '' }}
+          - ${{ github.event.inputs.platform == 'All' && 'WebGL' || '' }}
+        exclude:
+          - targetPlatform: ''
+    steps:
+      # استنساخ المستودع
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      # تخزين مؤقت لمكتبة Unity
+      # Cache Unity Library
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ matrix.targetPlatform }}-
+            Library-
+
+      # تحرير مساحة القرص
+      # Free disk space
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+
+      # بناء المشروع
+      # Build project
+      - name: Build Unity Project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: 2022.3.22f1
+          targetPlatform: ${{ matrix.targetPlatform }}
+          buildName: LHD
+          versioning: Semantic
+
+      # رفع البناء كـ artifact
+      # Upload build as artifact
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHD-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
+          retention-days: 14
+
+      # عرض ملخص البناء
+      # Display build summary
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "🎮 Unity Build Complete!"
+          echo "🖥️ Platform: ${{ matrix.targetPlatform }}"
+          echo "🔢 Unity Version: 2022.3.22f1"
+          if [ -d "build/${{ matrix.targetPlatform }}" ]; then
+            echo "✅ Build successful"
+            echo "📦 Build size:"
+            du -sh build/${{ matrix.targetPlatform }}
+          else
+            echo "❌ Build failed - artifacts not found"
+          fi

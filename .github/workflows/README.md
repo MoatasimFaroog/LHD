@@ -1,91 +1,261 @@
-# GitHub Actions Workflows for Unity Builder
+# GitHub Actions Workflows - دليل شامل / Complete Guide
 
-This directory contains GitHub Actions workflows for building the LHD Unity project.
+This directory contains all CI/CD workflows for the LHD project (Unity + Node.js/React).
 
-## Available Workflows
+يحتوي هذا المجلد على جميع workflows الخاصة بـ CI/CD للمشروع (Unity + Node.js/React).
 
-### 1. `activation.yml` - Unity License Activation
-**Trigger:** Manual (`workflow_dispatch`)
+---
 
-This workflow generates a Unity license activation file (`.alf`) that you need to activate your Unity license for CI/CD.
+## 📋 Available Workflows / الـ Workflows المتوفرة
 
-**Steps to use:**
-1. Go to your repository's **Actions** tab
-2. Select "Acquire Unity License" workflow
-3. Click "Run workflow"
-4. Download the generated `.alf` artifact
-5. Upload it to https://license.unity3d.com/manual
-6. Download the `.ulf` license file
-7. Add the contents as `UNITY_LICENSE` secret in repository settings
+### 1. **Node.js CI/CD** (`ci-nodejs.yml`)
+Build and test Node.js/TypeScript application (Backend + Frontend)
 
-**Required once:** This only needs to be run once initially or when the license expires.
+بناء واختبار تطبيق Node.js/TypeScript (Backend + Frontend)
 
-### 2. `build-android.yml` - Build Android APK
-**Triggers:**
+- **Triggers / متى يعمل**: 
+  - Push/PR to `main` affecting Node.js files
+  - Manual (`workflow_dispatch`)
+- **Features / المميزات**:
+  - ✅ TypeScript type checking
+  - 🏗️ Full project build
+  - 📦 Upload build artifacts
+  - ⚡ npm caching for speed
+  
+**Required Secrets / Secrets المطلوبة**: None / لا يوجد
+
+### 2. **Build Web Frontend** (`build-web.yml`)
+Build React Frontend with Vite
+
+بناء React Frontend باستخدام Vite
+
+- **Triggers / متى يعمل**: 
+  - Push/PR to `main` affecting frontend files
+  - Manual (`workflow_dispatch`)
+- **Features / المميزات**:
+  - 📦 Production build with Vite
+  - ⚡ node_modules caching
+  - ✅ Build verification
+  - 📤 Upload artifacts (14 days retention)
+
+**Required Secrets / Secrets المطلوبة**: None / لا يوجد
+
+### 3. **Build Android APK** (`build-android.yml`)
+Build Unity project for Android
+
+بناء مشروع Unity لنظام Android
+
+**Triggers / متى يعمل:**
 - Push to `main` branch (when files in `Assets/`, `Packages/`, or `ProjectSettings/` change)
 - Pull requests to `main` branch
 - Manual (`workflow_dispatch`)
 
-This workflow automatically builds an Android APK using Unity Builder.
+**Features / المميزات:**
+- 🎮 Build Android APK
+- 💾 Unity Library caching
+- 📱 Keystore signing support
+- 📦 Upload APK artifact (14 days retention)
+- ⏱️ Build time: First ~20-40 min, Cached ~10-15 min
 
-**Features:**
-- Caches Unity Library for faster builds
-- Frees disk space automatically
-- Builds signed or unsigned APKs
-- Uploads APK as artifact (retained for 14 days)
+**Required Secrets / Secrets المطلوبة**:
+- `UNITY_LICENSE` ✅ (Required / إلزامي)
+- `UNITY_EMAIL` ✅ (Required / إلزامي)
+- `UNITY_PASSWORD` ✅ (Required / إلزامي)
+- `ANDROID_KEYSTORE_BASE64` (Optional / اختياري)
+- `ANDROID_KEYSTORE_PASS` (Optional / اختياري)
+- `ANDROID_KEYALIAS_NAME` (Optional / اختياري)
+- `ANDROID_KEYALIAS_PASS` (Optional / اختياري)
 
-**Build time:**
-- First build: ~20-40 minutes
-- Subsequent builds: ~10-15 minutes (with caching)
+### 4. **Build Unity Multi-Platform** (`build-unity-multiplatform.yml`)
+Build Unity for multiple platforms (Windows, Linux, WebGL)
 
-## Required Secrets
+بناء Unity لمنصات متعددة (Windows, Linux, WebGL)
 
-Before the build workflow can run successfully, add these secrets in **Settings > Secrets and variables > Actions**:
+**Triggers / متى يعمل:** 
+- Manual only (`workflow_dispatch`)
 
-### Essential Secrets (Required)
-- `UNITY_LICENSE` - Full contents of the `.ulf` license file from Unity
-- `UNITY_EMAIL` - Your Unity account email
-- `UNITY_PASSWORD` - Your Unity account password
+**Features / المميزات**:
+- 🖥️ Build for: Windows, Linux, macOS, WebGL
+- ⚙️ Choose single platform or all
+- 💾 Platform-specific caching
+- 📦 Separate artifacts per platform
 
-### Optional Secrets (For Signed APKs)
-- `ANDROID_KEYSTORE_BASE64` - Base64-encoded Android keystore
-- `ANDROID_KEYSTORE_PASS` - Keystore password
-- `ANDROID_KEYALIAS_NAME` - Key alias name
-- `ANDROID_KEYALIAS_PASS` - Key alias password
+**Required Secrets / Secrets المطلوبة**:
+- `UNITY_LICENSE` ✅ (Required / إلزامي)
+- `UNITY_EMAIL` ✅ (Required / إلزامي)
+- `UNITY_PASSWORD` ✅ (Required / إلزامي)
 
-## Unity Version
+### 5. **Acquire Unity License** (`activation.yml`)
+Generate Unity license activation file
 
-The workflows are configured for **Unity 2022.3.22f1**. Make sure this matches your project's Unity version in `ProjectSettings/ProjectVersion.txt`.
+الحصول على ترخيص Unity
 
-## Artifacts
+**Triggers / متى يعمل:** 
+- Manual only (`workflow_dispatch`)
 
-After a successful build, the APK will be available as an artifact named `LHD-APK` in the workflow run. Download it from:
+**Steps to use / خطوات الاستخدام:**
+1. Go to **Actions** tab / اذهب إلى تبويب Actions
+2. Select "Acquire Unity License" workflow
+3. Click "Run workflow" / اضغط على Run workflow
+4. Download the generated `.alf` artifact / حمل ملف .alf
+5. Upload it to https://license.unity3d.com/manual / ارفعه إلى الموقع
+6. Download the `.ulf` license file / حمل ملف .ulf
+7. Add contents as `UNITY_LICENSE` secret / أضفه كـ Secret
+
+**Required once / مطلوب مرة واحدة:** Only initially or when license expires / فقط في البداية أو عند انتهاء الترخيص
+
+---
+
+## 🔐 Required Secrets / Secrets المطلوبة
+
+### Unity Secrets (Required for Unity builds / إلزامية لبناء Unity):
+
+```
+UNITY_EMAIL=your-unity-email@example.com
+UNITY_PASSWORD=your-unity-password
+UNITY_LICENSE=<contents of .ulf file>
+```
+
+### Android Signing Secrets (Optional for signed APKs / اختيارية للتوقيع):
+
+```
+ANDROID_KEYSTORE_BASE64=<keystore file as base64>
+ANDROID_KEYSTORE_PASS=your-keystore-password
+ANDROID_KEYALIAS_NAME=your-key-alias
+ANDROID_KEYALIAS_PASS=your-key-password
+```
+
+### How to add Secrets / كيفية إضافة Secrets:
+1. Go to **Settings > Secrets and variables > Actions**
+2. Click "New repository secret"
+3. Add name and value / أضف الاسم والقيمة
+4. Save / احفظ
+
+---
+
+## 🚀 How to Use / كيفية الاستخدام
+
+### Automatic Builds / البناء التلقائي:
+Workflows run automatically on push/PR to relevant files
+
+تعمل workflows تلقائياً عند push/PR للملفات المتعلقة
+
+### Manual Builds / البناء اليدوي:
+1. Go to **Actions** tab / اذهب إلى تبويب Actions
+2. Select desired workflow / اختر الـ workflow المطلوب
+3. Click "Run workflow" / اضغط على Run workflow
+4. Choose options (if any) / اختر الخيارات
+5. Click "Run workflow" / اضغط على Run workflow
+
+---
+
+## 📦 Download Artifacts / تحميل الـ Artifacts
+
+After build completes / بعد انتهاء البناء:
 1. Go to **Actions** tab
-2. Click on the completed workflow run
+2. Select completed workflow run
 3. Scroll to **Artifacts** section
-4. Click **LHD-APK** to download
+4. Click to download
 
-## Troubleshooting
+**Retention periods / مدة الاحتفاظ**:
+- Node.js builds: 7 days / أيام
+- Web builds: 14 days / يوم
+- Unity builds: 14 days / يوم
+- Activation file: 5 days / أيام
 
-### Build fails with "No valid Unity license"
-- Verify `UNITY_LICENSE` secret contains the complete `.ulf` file contents
-- Re-run the activation workflow if the license expired
+---
 
-### Build fails with "Scene not found"
-- Ensure `Assets/Scenes/Main.unity` exists
-- Check that it's listed in `ProjectSettings/EditorBuildSettings.asset`
+## 🔍 Troubleshooting / استكشاف الأخطاء
 
-### Build runs out of disk space
-- The workflow includes automatic cleanup, but very large projects may still fail
-- Consider using a self-hosted runner with more disk space
+### Unity build fails / بناء Unity يفشل
+**Solution / الحل**:
+**Solution / الحل**:
+- Verify `UNITY_LICENSE` secret exists and is complete / تحقق من وجود Secret واكتماله
+- Re-run activation workflow if expired / أعد تشغيل activation إذا انتهى
+- Check logs for details / راجع الـ logs للتفاصيل
 
-### APK won't install on device
-- Enable "Install from Unknown Sources" in your Android device settings
-- For Google Play distribution, you need to provide keystore secrets for signed APKs
+### Node.js build fails / بناء Node.js يفشل
+**Solution / الحل**:
+- Verify `package.json` is correct / تحقق من صحة package.json
+- Try `npm ci` locally / جرب npm ci محلياً
+- Check dependencies / تحقق من الـ dependencies
 
-## Documentation
+### TypeScript errors / أخطاء TypeScript
+**Solution / الحل**:
+- Run `npm run check` locally / جرب npm run check محلياً
+- Fix TypeScript errors / أصلح الأخطاء
+- Commit changes / commit التغييرات
 
-For detailed setup instructions, see:
+### Build runs out of disk space / نفاذ مساحة القرص
+**Solution / الحل**:
+**Solution / الحل**:
+- Workflow includes automatic cleanup / يتضمن workflow تنظيف تلقائي
+- Large projects may need self-hosted runner / المشاريع الكبيرة قد تحتاج self-hosted runner
+
+### APK won't install / APK لا يثبت
+**Solution / الحل**:
+- Enable "Install from Unknown Sources" / فعّل "التثبيت من مصادر غير معروفة"
+- For Play Store, provide keystore secrets / لـ Play Store، وفر keystore secrets
+
+---
+
+## 🎯 Best Practices / أفضل الممارسات
+
+1. **Use Caching / استخدم Caching**: All workflows use caching for speed / جميع الـ workflows تستخدم caching
+2. **Secure Secrets / أمان Secrets**: Never expose secrets in code / لا تكشف secrets في الكود
+3. **PR Checks / فحوصات PR**: Workflows run on PRs / تعمل على Pull Requests
+4. **Artifacts / الـ Artifacts**: Auto-deleted after retention period / تحذف تلقائياً بعد المدة المحددة
+5. **Timeouts / المهل الزمنية**: All jobs have timeouts / كل job له timeout
+
+---
+
+## 📊 Project Structure / هيكل المشروع
+
+```
+LHD/
+├── Assets/          # Unity game assets
+├── client/          # React frontend (Vite)
+├── server/          # Express backend
+├── shared/          # Shared TypeScript code
+├── .github/
+│   └── workflows/   # CI/CD workflows (هنا)
+└── package.json     # Node.js dependencies
+```
+
+**Technologies / التقنيات**:
+- Unity: **2022.3.22f1**
+- Node.js: **20.x LTS**
+- React: **18.x**
+- TypeScript: **5.x**
+- Vite: **5.x**
+- Package Manager: **npm**
+
+---
+
+## 📚 Additional Resources / موارد إضافية
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Unity GameCI Documentation](https://game.ci/)
+- [Vite Build Guide](https://vitejs.dev/guide/build.html)
+- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
+
+**Project Documentation / توثيق المشروع**:
 - `/Docs/CI_CD_SETUP.md` - Complete CI/CD setup guide
 - `/replit.md` - Project overview and architecture
 - `/Docs/RUNBOOK.md` - Setup and troubleshooting guide
+
+---
+
+## 🤝 Contributing / المساهمة
+
+To improve or add new workflows / لتحسين أو إضافة workflows جديدة:
+1. Create a new branch / أنشئ فرع جديد
+2. Add/modify workflow / أضف/عدل الـ workflow
+3. Test changes / اختبر التغييرات
+4. Create Pull Request / أنشئ Pull Request
+
+---
+
+**Last Updated / آخر تحديث**: February 2026 / فبراير ٢٠٢٦
+
+**Maintained by / يشرف عليه**: LHD Team
