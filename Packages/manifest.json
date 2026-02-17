@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "com.unity.xr.arcore": "5.1.2",
+    "com.unity.xr.arfoundation": "5.1.2",
+    "com.unity.xr.management": "4.4.0",
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.unity.ugui": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0",
+    "com.unity.modules.unitywebrequestjson": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.imageconversion": "1.0.0"
+  }
+}
