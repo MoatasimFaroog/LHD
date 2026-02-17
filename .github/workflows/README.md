@@ -169,7 +169,6 @@ After build completes / بعد انتهاء البناء:
 
 ### Unity build fails / بناء Unity يفشل
 **Solution / الحل**:
-**Solution / الحل**:
 - Verify `UNITY_LICENSE` secret exists and is complete / تحقق من وجود Secret واكتماله
 - Re-run activation workflow if expired / أعد تشغيل activation إذا انتهى
 - Check logs for details / راجع الـ logs للتفاصيل
@@ -187,7 +186,6 @@ After build completes / بعد انتهاء البناء:
 - Commit changes / commit التغييرات
 
 ### Build runs out of disk space / نفاذ مساحة القرص
-**Solution / الحل**:
 **Solution / الحل**:
 - Workflow includes automatic cleanup / يتضمن workflow تنظيف تلقائي
 - Large projects may need self-hosted runner / المشاريع الكبيرة قد تحتاج self-hosted runner
