@@ -3,6 +3,9 @@ name: Acquire Unity License
 on:
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   activation:
     name: Request activation file

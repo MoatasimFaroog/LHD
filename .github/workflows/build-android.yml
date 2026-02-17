@@ -13,6 +13,9 @@ on:
       - main
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   buildForAndroid:
     name: Build for Android
@@ -47,13 +50,13 @@ jobs:
           unityVersion: 2022.3.22f1
           targetPlatform: Android
           androidExportType: androidPackage
-          androidTargetSdkVersion: AndroidApiLevel34
+          androidTargetSdkVersion: AndroidApiLevel34  # Android 14 - stable and widely adopted
           androidKeystoreName: ${{ secrets.ANDROID_KEYSTORE_BASE64 && 'user.keystore' || '' }}
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
-          buildName: NomadGo-SpatialVision
+          buildName: LHD
           versioning: Semantic
 
       - name: Upload APK
