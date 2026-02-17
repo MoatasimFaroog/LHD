@@ -1,3 +1,6 @@
+# بناء تطبيق Android APK
+# Build Android APK
+
 name: Build Android APK
 
 on:
@@ -11,6 +14,10 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'Assets/**'
+      - 'Packages/**'
+      - 'ProjectSettings/**'
   workflow_dispatch: {}
 
 permissions:
@@ -22,12 +29,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      # استنساخ المستودع مع Git LFS
+      # Checkout repository with Git LFS
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
+      # تخزين مؤقت لمكتبة Unity لتسريع البناء
+      # Cache Unity Library for faster builds
       - name: Cache Unity Library
         uses: actions/cache@v4
         with:
@@ -37,9 +48,13 @@ jobs:
             Library-Android-
             Library-
 
+      # تحرير مساحة القرص للبناء
+      # Free disk space for build
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
 
+      # بناء APK لنظام Android
+      # Build Android APK
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
         env:
@@ -59,9 +74,26 @@ jobs:
           buildName: LHD
           versioning: Semantic
 
+      # رفع ملف APK كـ artifact
+      # Upload APK as artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: LHD-APK
           path: build/Android
           retention-days: 14
+
+      # عرض معلومات البناء
+      # Display build information
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "🎮 Unity Build Complete!"
+          echo "📦 Platform: Android"
+          echo "🔢 Unity Version: 2022.3.22f1"
+          if [ -d "build/Android" ]; then
+            echo "✅ Build artifacts created successfully"
+            ls -lh build/Android/
+          else
+            echo "❌ Build artifacts not found"
+          fi
