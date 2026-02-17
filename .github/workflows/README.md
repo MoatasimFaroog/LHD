@@ -162,7 +162,6 @@ After build completes / بعد انتهاء البناء:
 - Node.js builds: 7 days / أيام
 - Web builds: 14 days / يوم
 - Unity builds: 14 days / يوم
-- Activation file: 5 days / أيام
 
 ---
 
