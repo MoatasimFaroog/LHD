@@ -1,7 +1,4 @@
-# الحصول على ترخيص Unity تلقائياً
-# Acquire Unity License automatically
-
-name: Acquire Unity License
+name: Acquire Unity License (ALF)
 
 on:
   workflow_dispatch: {}
@@ -11,23 +8,17 @@ permissions:
 
 jobs:
   activation:
-    name: Unity Activation Instructions
+    name: Request activation file
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
-      - name: Display Activation Instructions
-        run: |
-          echo "⚠️  هذا الإجراء لم يعد مدعومًا"
-          echo "⚠️  This action is no longer supported"
-          echo ""
-          echo "📚 يرجى استخدام تعليمات التفعيل المحدثة الموجودة في:"
-          echo "📚 Please use the updated activation instructions found at:"
-          echo ""
-          echo "🔗 https://game.ci/docs/github/activation"
-          echo ""
-          echo "ℹ️  سيوجهك الدليل الجديد خلال عملية الحصول على ترخيص Unity"
-          echo "ℹ️  The new guide will walk you through the process of obtaining a Unity license"
-          echo ""
-          echo "❌ This workflow is intentionally marked as failed to indicate it should not be used."
-          echo "❌ يتم وضع علامة على هذا الـ workflow كفاشل عمداً للإشارة إلى أنه لا ينبغي استخدامه."
-          exit 1
+      - name: Request manual activation file
+        id: alf
+        uses: game-ci/unity-request-activation-file@v2
+        with:
+          unityVersion: 2022.3.22f1
+
+      - name: Upload activation file
+        uses: actions/upload-artifact@v4
+        with:
+          name: Unity-Activation-File
+          path: ${{ steps.alf.outputs.filePath }}
