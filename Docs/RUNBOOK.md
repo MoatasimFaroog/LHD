@@ -159,7 +159,52 @@ npm run dev
 # Dashboard: http://localhost:5000
 ```
 
-### 5.3 Test with cURL
+### 5.3 Using Docker
+
+Build and run the mock server (and web dashboard) in a single reproducible container.
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) 20.10+
+
+#### Build the image
+
+```bash
+docker build -t nomadgo-spatialvision .
+```
+
+#### Run the container
+
+```bash
+docker run -p 5000:5000 nomadgo-spatialvision
+# Dashboard: http://localhost:5000
+# Health check: http://localhost:5000/api/health
+```
+
+#### Using Docker Compose (recommended for local development)
+
+```bash
+docker compose up --build
+# To run in the background:
+docker compose up -d --build
+# To stop:
+docker compose down
+```
+
+**Environment variables (all optional):**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT`   | `5000`  | Port the server listens on |
+| `NODE_ENV` | `production` | Runtime environment |
+
+Example with a custom port:
+
+```bash
+docker run -p 8080:8080 -e PORT=8080 nomadgo-spatialvision
+```
+
+---
+
+### 5.4 Test with cURL
 
 ```bash
 # Health check
