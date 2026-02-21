@@ -85,7 +85,58 @@ Build Unity for multiple platforms (Windows, Linux, WebGL)
 - `UNITY_EMAIL` ✅ (Required / إلزامي)
 - `UNITY_PASSWORD` ✅ (Required / إلزامي)
 
-### 5. **Acquire Unity License** (`activation.yml`)
+### 5. **Build via RunPod** (`build-runpod.yml`)
+Build the Node.js/React application using RunPod as a self-hosted GitHub Actions runner
+
+بناء تطبيق Node.js/React باستخدام RunPod كـ self-hosted runner لـ GitHub Actions
+
+**Triggers / متى يعمل:**
+- Manual only (`workflow_dispatch`)
+
+**Features / المميزات:**
+- 🚀 Starts a RunPod pod as a GitHub Actions self-hosted runner
+- 🏗️ Full project build (Frontend + Backend) on RunPod infrastructure
+- 📦 Upload build artifacts (7 days retention)
+- 🛑 Automatically terminates the RunPod pod after build
+
+**Build time / وقت البناء:** ~5–15 min (including runner startup)
+
+**Required Secrets / Secrets المطلوبة**:
+- `RUNPOD_API_KEY` ✅ (Required / إلزامي) — RunPod API key from [runpod.io/console/user/settings](https://www.runpod.io/console/user/settings)
+- `GH_PAT` ✅ (Required / إلزامي) — GitHub Personal Access Token with `repo` scope
+
+---
+
+### 6. **Build Unity Android APK via RunPod** (`build-android-runpod.yml`)
+Build the Unity Android APK using RunPod as a self-hosted runner — ideal when local disk space is insufficient for Unity
+
+بناء Unity Android APK باستخدام RunPod كـ self-hosted runner — مثالي عندما لا تكفي مساحة القرص المحلية لـ Unity
+
+**Triggers / متى يعمل:**
+- Manual only (`workflow_dispatch`)
+
+**Features / المميزات:**
+- 🚀 Starts a RunPod pod with **60 GB disk** + 16 GB RAM (Unity needs ~40–60 GB)
+- 🎮 Builds Unity Android APK via `game-ci/unity-builder@v4` (same as `build-android.yml`)
+- 💾 Caches Unity Library folder to speed up future runs
+- 📦 Upload APK artifact (14 days retention)
+- 🛑 Always terminates the RunPod pod when done (even on failure) to avoid extra charges
+- ⏱️ Build time: ~30–60 min (first run pulls ~20 GB Unity Docker image)
+
+**Required Secrets / Secrets المطلوبة**:
+- `RUNPOD_API_KEY` ✅ (Required / إلزامي) — RunPod API key from [runpod.io/console/user/settings](https://www.runpod.io/console/user/settings)
+- `GH_PAT` ✅ (Required / إلزامي) — GitHub Personal Access Token with `repo` scope
+- `UNITY_LICENSE` ✅ (Required / إلزامي)
+- `UNITY_EMAIL` ✅ (Required / إلزامي)
+- `UNITY_PASSWORD` ✅ (Required / إلزامي)
+- `ANDROID_KEYSTORE_BASE64` (Optional / اختياري)
+- `ANDROID_KEYSTORE_PASS` (Optional / اختياري)
+- `ANDROID_KEYALIAS_NAME` (Optional / اختياري)
+- `ANDROID_KEYALIAS_PASS` (Optional / اختياري)
+
+---
+
+### 7. **Acquire Unity License** (`activation.yml`)
 Unity license activation instructions
 
 تعليمات الحصول على ترخيص Unity
@@ -108,6 +159,13 @@ This workflow now directs you to the updated activation documentation.
 ---
 
 ## 🔐 Required Secrets / Secrets المطلوبة
+
+### RunPod Secrets (Required for RunPod builds / إلزامية لبناء RunPod):
+
+```
+RUNPOD_API_KEY=your-runpod-api-key
+GH_PAT=your-github-personal-access-token
+```
 
 ### Unity Secrets (Required for Unity builds / إلزامية لبناء Unity):
 
@@ -233,6 +291,7 @@ LHD/
 ## 📚 Additional Resources / موارد إضافية
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [RunPod Documentation](https://docs.runpod.io/)
 - [Unity GameCI Documentation](https://game.ci/)
 - [Vite Build Guide](https://vitejs.dev/guide/build.html)
 - [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)

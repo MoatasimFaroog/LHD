@@ -1,0 +1,230 @@
+# بناء Unity Android APK عن طريق RunPod
+# Build Unity Android APK via RunPod (large disk / self-hosted runner)
+#
+# لماذا RunPod؟ / Why RunPod?
+#   يحتاج Unity إلى 40-60 GB من مساحة القرص (صورة Docker + مكتبة البناء).
+#   يُمكّن RunPod من توفير هذه المساحة بدون الحاجة لجهاز محلي.
+#
+#   Unity needs 40-60 GB of disk space (Docker image + build Library).
+#   RunPod provides this space without needing a powerful local machine.
+#
+# المتطلبات / Requirements (GitHub Secrets):
+#   RUNPOD_API_KEY  — مفتاح API من runpod.io/console/user/settings
+#   GH_PAT          — GitHub Personal Access Token (صلاحية repo)
+#   UNITY_LICENSE   — محتوى ملف .ulf كاملاً
+#   UNITY_EMAIL     — بريد حساب Unity
+#   UNITY_PASSWORD  — كلمة مرور حساب Unity
+
+name: Build Unity Android APK (RunPod)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # الوظيفة 1: تشغيل pod على RunPod وتسجيله كـ self-hosted runner
+  # Job 1: Launch a RunPod pod and register it as a GitHub Actions runner
+  # ─────────────────────────────────────────────────────────────────────────
+  start-runner:
+    name: Start RunPod Runner
+    runs-on: ubuntu-latest
+    outputs:
+      pod_id: ${{ steps.start-pod.outputs.pod_id }}
+      runner_label: ${{ steps.start-pod.outputs.runner_label }}
+    steps:
+      - name: Launch RunPod pod (60 GB disk, 16 GB RAM) as GitHub Actions runner
+        id: start-pod
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          RUNNER_LABEL="runpod-unity-${{ github.run_id }}"
+
+          # يحتاج pod لـ:
+          #   containerDiskInGb: 60  ← صورة Unity Docker (~20 GB) + مكتبة البناء (~30 GB)
+          #   minMemoryInGb: 16      ← Unity يحتاج ذاكرة وفيرة
+          #   minVcpuCount: 8        ← تسريع عملية الكمبايل
+          #   imageName: myoung34/github-runner:ubuntu-jammy
+          #              ← runner image يتضمن Docker المطلوب لـ game-ci/unity-builder
+          RESPONSE=$(curl -s \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $RUNPOD_API_KEY" \
+            "https://api.runpod.io/graphql" \
+            --data-raw "{
+              \"query\": \"mutation {
+                podFindAndDeployOnDemand(input: {
+                  cloudType: SECURE,
+                  gpuCount: 0,
+                  volumeInGb: 0,
+                  containerDiskInGb: 60,
+                  minMemoryInGb: 16,
+                  minVcpuCount: 8,
+                  imageName: \\\"myoung34/github-runner:ubuntu-jammy\\\",
+                  env: [
+                    { key: \\\"ACCESS_TOKEN\\\",   value: \\\"$GH_PAT\\\" },
+                    { key: \\\"REPO_URL\\\",        value: \\\"https://github.com/${{ github.repository }}\\\" },
+                    { key: \\\"RUNNER_NAME\\\",     value: \\\"$RUNNER_LABEL\\\" },
+                    { key: \\\"RUNNER_LABELS\\\",   value: \\\"$RUNNER_LABEL\\\" },
+                    { key: \\\"RUNNER_SCOPE\\\",    value: \\\"repo\\\" },
+                    { key: \\\"EPHEMERAL\\\",       value: \\\"1\\\" }
+                  ]
+                }) { id }
+              }\"
+            }")
+
+          # التحقق من استجابة API
+          # Validate API response
+          if echo "$RESPONSE" | jq -e '.errors' > /dev/null 2>&1; then
+            echo "❌ RunPod API error:"
+            echo "$RESPONSE" | jq '.errors'
+            exit 1
+          fi
+
+          POD_ID=$(echo "$RESPONSE" | jq -r '.data.podFindAndDeployOnDemand.id // empty')
+          if [ -z "$POD_ID" ]; then
+            echo "❌ Failed to start RunPod pod. Full response:"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "pod_id=$POD_ID"         >> $GITHUB_OUTPUT
+          echo "runner_label=$RUNNER_LABEL" >> $GITHUB_OUTPUT
+          echo "✅ RunPod pod started: $POD_ID"
+          echo "🏷️ Runner label: $RUNNER_LABEL"
+
+      # انتظار حتى يصبح الـ runner متاحاً (فحص كل 15 ثانية، حد أقصى 10 دقائق)
+      # Poll until runner is online (every 15 s, up to 10 minutes)
+      - name: Wait for runner to come online
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          RUNNER_LABEL: ${{ steps.start-pod.outputs.runner_label }}
+        run: |
+          echo "⏳ Waiting for RunPod runner ($RUNNER_LABEL) to come online..."
+          TIMEOUT=600
+          ELAPSED=0
+          INTERVAL=15
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS=$(curl -s \
+              -H "Authorization: token $GH_PAT" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runners" \
+              | jq -r --arg label "$RUNNER_LABEL" \
+                '.runners[] | select(.labels[].name == $label) | .status' 2>/dev/null || true)
+            if [ "$STATUS" = "online" ]; then
+              echo "✅ Runner is online!"
+              exit 0
+            fi
+            echo "⏳ Not yet online (${ELAPSED}s elapsed), retrying in ${INTERVAL}s..."
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          echo "❌ Timed out waiting for runner after ${TIMEOUT}s"
+          exit 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # الوظيفة 2: بناء Unity Android APK على الـ RunPod runner
+  # Job 2: Build Unity Android APK on the RunPod runner
+  # ─────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build Unity Android APK on RunPod
+    needs: start-runner
+    runs-on: ${{ needs.start-runner.outputs.runner_label }}
+    timeout-minutes: 90
+    steps:
+      # استنساخ المستودع مع Git LFS
+      # Checkout with LFS (Unity binary assets)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      # تخزين مؤقت لمكتبة Unity لتسريع البناء التالي
+      # Cache Unity Library folder to speed up future builds
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-RunPod-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-RunPod-
+            Library-Android-
+            Library-
+
+      # بناء APK باستخدام game-ci/unity-builder
+      # Build the Android APK via game-ci/unity-builder (runs Unity inside Docker)
+      - name: Build Android APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: 2022.3.22f1
+          targetPlatform: Android
+          androidExportType: androidPackage
+          androidTargetSdkVersion: AndroidApiLevel34
+          androidKeystoreName: ${{ secrets.ANDROID_KEYSTORE_BASE64 && 'user.keystore' || '' }}
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+          buildName: LHD
+          versioning: Semantic
+
+      # رفع ملف APK كـ artifact (يُحفظ 14 يوماً)
+      # Upload APK artifact (kept for 14 days)
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LHD-Android-APK-RunPod
+          path: build/Android
+          retention-days: 14
+
+      # ملخص البناء
+      # Build summary
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "🎮 Unity Android Build via RunPod — Complete!"
+          echo "🔢 Unity Version : 2022.3.22f1"
+          echo "📦 Platform      : Android"
+          if [ -d "build/Android" ]; then
+            echo "✅ Build successful"
+            echo "📁 Artifacts:"
+            ls -lh build/Android/
+          else
+            echo "❌ Build failed — build/Android not found"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # الوظيفة 3: إنهاء الـ pod دائماً (حتى لو فشل البناء) لتفادي التكاليف
+  # Job 3: Always terminate the pod (even on build failure) to avoid charges
+  # ─────────────────────────────────────────────────────────────────────────
+  stop-runner:
+    name: Stop RunPod Runner
+    needs:
+      - start-runner
+      - build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Terminate RunPod pod
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD_ID: ${{ needs.start-runner.outputs.pod_id }}
+        run: |
+          TERMINATE_RESPONSE=$(curl -s \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $RUNPOD_API_KEY" \
+            "https://api.runpod.io/graphql" \
+            --data-raw "{\"query\": \"mutation { podTerminate(input: { podId: \\\"$POD_ID\\\" }) }\"}")
+          if echo "$TERMINATE_RESPONSE" | jq -e '.errors' > /dev/null 2>&1; then
+            echo "⚠️ Warning: pod termination returned errors:"
+            echo "$TERMINATE_RESPONSE" | jq '.errors'
+          else
+            echo "🛑 Terminated RunPod pod: $POD_ID"
+          fi
