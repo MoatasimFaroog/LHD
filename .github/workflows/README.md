@@ -107,7 +107,36 @@ Build the Node.js/React application using RunPod as a self-hosted GitHub Actions
 
 ---
 
-### 6. **Acquire Unity License** (`activation.yml`)
+### 6. **Build Unity Android APK via RunPod** (`build-android-runpod.yml`)
+Build the Unity Android APK using RunPod as a self-hosted runner — ideal when local disk space is insufficient for Unity
+
+بناء Unity Android APK باستخدام RunPod كـ self-hosted runner — مثالي عندما لا تكفي مساحة القرص المحلية لـ Unity
+
+**Triggers / متى يعمل:**
+- Manual only (`workflow_dispatch`)
+
+**Features / المميزات:**
+- 🚀 Starts a RunPod pod with **60 GB disk** + 16 GB RAM (Unity needs ~40–60 GB)
+- 🎮 Builds Unity Android APK via `game-ci/unity-builder@v4` (same as `build-android.yml`)
+- 💾 Caches Unity Library folder to speed up future runs
+- 📦 Upload APK artifact (14 days retention)
+- 🛑 Always terminates the RunPod pod when done (even on failure) to avoid extra charges
+- ⏱️ Build time: ~30–60 min (first run pulls ~20 GB Unity Docker image)
+
+**Required Secrets / Secrets المطلوبة**:
+- `RUNPOD_API_KEY` ✅ (Required / إلزامي) — RunPod API key from [runpod.io/console/user/settings](https://www.runpod.io/console/user/settings)
+- `GH_PAT` ✅ (Required / إلزامي) — GitHub Personal Access Token with `repo` scope
+- `UNITY_LICENSE` ✅ (Required / إلزامي)
+- `UNITY_EMAIL` ✅ (Required / إلزامي)
+- `UNITY_PASSWORD` ✅ (Required / إلزامي)
+- `ANDROID_KEYSTORE_BASE64` (Optional / اختياري)
+- `ANDROID_KEYSTORE_PASS` (Optional / اختياري)
+- `ANDROID_KEYALIAS_NAME` (Optional / اختياري)
+- `ANDROID_KEYALIAS_PASS` (Optional / اختياري)
+
+---
+
+### 7. **Acquire Unity License** (`activation.yml`)
 Unity license activation instructions
 
 تعليمات الحصول على ترخيص Unity
