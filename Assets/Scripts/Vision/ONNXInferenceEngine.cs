@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Unity.Barracuda;
+using Unity.Sentis;
 
 namespace NomadGo.Vision
 {
@@ -66,36 +66,24 @@ namespace NomadGo.Vision
         {
             try
             {
-                // Try loading as an NNModel asset from Resources
+                // Load as a ModelAsset from Resources (Unity Sentis uses ModelAsset instead of NNModel)
                 string assetName = System.IO.Path.GetFileNameWithoutExtension(modelPath);
-                NNModel modelAsset = Resources.Load<NNModel>(assetName);
+                ModelAsset modelAsset = Resources.Load<ModelAsset>(assetName);
                 if (modelAsset == null)
                 {
-                    modelAsset = Resources.Load<NNModel>(modelPath.Replace(".onnx", "").Replace("Models/", ""));
+                    modelAsset = Resources.Load<ModelAsset>(modelPath.Replace(".onnx", "").Replace("Models/", ""));
                 }
 
                 if (modelAsset != null)
                 {
                     runtimeModel = ModelLoader.Load(modelAsset);
-                    worker = WorkerFactory.CreateWorker(WorkerFactory.Type.CSharpBurst, runtimeModel);
+                    worker = WorkerFactory.CreateWorker(BackendType.CPU, runtimeModel);
                     isLoaded = true;
                     Debug.Log($"[ONNXEngine] Model loaded from Resources: {modelAsset.name}");
                     return;
                 }
 
-                // Try loading from persistentDataPath (copied there at runtime)
-                string persistentPath = System.IO.Path.Combine(Application.persistentDataPath, "model.onnx");
-                if (System.IO.File.Exists(persistentPath))
-                {
-                    byte[] modelBytes = System.IO.File.ReadAllBytes(persistentPath);
-                    runtimeModel = ModelLoader.Load(modelBytes);
-                    worker = WorkerFactory.CreateWorker(WorkerFactory.Type.CSharpBurst, runtimeModel);
-                    isLoaded = true;
-                    Debug.Log($"[ONNXEngine] Model loaded from persistentDataPath: {persistentPath}");
-                    return;
-                }
-
-                Debug.LogError($"[ONNXEngine] Model not found: {modelPath}. Place the .onnx file in a Resources folder or persistentDataPath.");
+                Debug.LogError($"[ONNXEngine] Model not found: {modelPath}. Place the .onnx file as a ModelAsset in a Resources folder.");
                 isLoaded = false;
             }
             catch (Exception ex)
@@ -116,11 +104,11 @@ namespace NomadGo.Vision
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            Tensor inputTensor = PreprocessFrame(frame);
+            TensorFloat inputTensor = PreprocessFrame(frame);
             worker.Execute(inputTensor);
             inputTensor.Dispose();
 
-            Tensor output = worker.PeekOutput();
+            TensorFloat output = worker.PeekOutput() as TensorFloat;
             List<DetectionResult> rawDetections = ParseOutput(output, frame.width, frame.height);
             output.Dispose();
 
@@ -137,7 +125,7 @@ namespace NomadGo.Vision
             return finalDetections;
         }
 
-        private Tensor PreprocessFrame(Texture2D frame)
+        private TensorFloat PreprocessFrame(Texture2D frame)
         {
             RenderTexture rt = RenderTexture.GetTemporary(inputWidth, inputHeight);
             Graphics.Blit(frame, rt);
@@ -152,25 +140,32 @@ namespace NomadGo.Vision
             Color[] pixels = resized.GetPixels();
             Destroy(resized);
 
-            // Barracuda uses NHWC format: [batch=1, height, width, channels=3]
-            var tensor = new Tensor(1, inputHeight, inputWidth, 3);
+            // Sentis uses NCHW format: [batch=1, channels=3, height, width]
+            float[] data = new float[3 * inputHeight * inputWidth];
+            int channelStride = inputHeight * inputWidth;
             for (int y = 0; y < inputHeight; y++)
             {
                 for (int x = 0; x < inputWidth; x++)
                 {
                     int idx = y * inputWidth + x;
-                    tensor[0, y, x, 0] = pixels[idx].r;
-                    tensor[0, y, x, 1] = pixels[idx].g;
-                    tensor[0, y, x, 2] = pixels[idx].b;
+                    data[0 * channelStride + y * inputWidth + x] = pixels[idx].r;
+                    data[1 * channelStride + y * inputWidth + x] = pixels[idx].g;
+                    data[2 * channelStride + y * inputWidth + x] = pixels[idx].b;
                 }
             }
 
-            return tensor;
+            return new TensorFloat(new TensorShape(1, 3, inputHeight, inputWidth), data);
         }
 
-        private List<DetectionResult> ParseOutput(Tensor output, int originalWidth, int originalHeight)
+        private List<DetectionResult> ParseOutput(TensorFloat output, int originalWidth, int originalHeight)
         {
             var detections = new List<DetectionResult>();
+
+            if (output == null)
+            {
+                Debug.LogError("[ONNXEngine] Output tensor is null.");
+                return detections;
+            }
 
             try
             {
@@ -178,25 +173,33 @@ namespace NomadGo.Vision
                 float scaleY = (float)originalHeight / inputHeight;
                 int numClasses = labels.Length;
 
-                // Barracuda NHWC shape: [batch, height, width, channels]
-                // YOLOv8 ONNX output [1, 4+numClasses, numAnchors] maps to NHWC [1, 1, numAnchors, 4+numClasses]
+                // YOLOv8 ONNX output: [1, 4+numClasses, numAnchors] (NCHW)
+                // Dimension 0 = batch, Dimension 1 = features (4 bbox + numClasses), Dimension 2 = anchors
                 var shape = output.shape;
-                int numDetections = shape.width;
-                int rowSize = shape.channels;
+                if (shape.rank < 3)
+                {
+                    Debug.LogError($"[ONNXEngine] Unexpected output tensor rank: {shape.rank}");
+                    return detections;
+                }
+
+                const int featureDim = 1;
+                const int anchorDim = 2;
+                int numDetections = shape[anchorDim]; // numAnchors
+                int rowSize = shape[featureDim];      // 4+numClasses
 
                 for (int i = 0; i < numDetections; i++)
                 {
-                    float cx = output[0, 0, i, 0];
-                    float cy = output[0, 0, i, 1];
-                    float w  = output[0, 0, i, 2];
-                    float h  = output[0, 0, i, 3];
+                    float cx = output[0, 0, i];
+                    float cy = output[0, 1, i];
+                    float w  = output[0, 2, i];
+                    float h  = output[0, 3, i];
 
                     float bestConf = 0f;
                     int bestClass = -1;
 
                     for (int c = 0; c < numClasses && (c + 4) < rowSize; c++)
                     {
-                        float conf = output[0, 0, i, 4 + c];
+                        float conf = output[0, 4 + c, i];
                         if (conf > bestConf)
                         {
                             bestConf = conf;

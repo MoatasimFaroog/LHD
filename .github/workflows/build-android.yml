@@ -51,7 +51,8 @@ jobs:
       # تحرير مساحة القرص للبناء
       # Free disk space for build
       - name: Free Disk Space
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+        continue-on-error: true
 
       # بناء APK لنظام Android
       # Build Android APK
