@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Microsoft.ML.OnnxRuntime;
-using Microsoft.ML.OnnxRuntime.Tensors;
+using Unity.Barracuda;
 
 namespace NomadGo.Vision
 {
@@ -20,9 +19,8 @@ namespace NomadGo.Vision
         private bool isLoaded = false;
         private float lastInferenceTimeMs = 0f;
 
-        private InferenceSession session;
-        private string inputName;
-        private string outputName;
+        private IWorker worker;
+        private Model runtimeModel;
 
         public bool IsLoaded => isLoaded;
         public float LastInferenceTimeMs => lastInferenceTimeMs;
@@ -68,44 +66,39 @@ namespace NomadGo.Vision
         {
             try
             {
-                string fullModelPath = System.IO.Path.Combine(Application.streamingAssetsPath, modelPath);
-
-                if (!System.IO.File.Exists(fullModelPath))
+                // Try loading as an NNModel asset from Resources
+                string assetName = System.IO.Path.GetFileNameWithoutExtension(modelPath);
+                NNModel modelAsset = Resources.Load<NNModel>(assetName);
+                if (modelAsset == null)
                 {
-                    TextAsset modelAsset = Resources.Load<TextAsset>(modelPath.Replace(".onnx", ""));
-                    if (modelAsset != null)
-                    {
-                        string tempPath = System.IO.Path.Combine(Application.persistentDataPath, "model.onnx");
-                        System.IO.File.WriteAllBytes(tempPath, modelAsset.bytes);
-                        fullModelPath = tempPath;
-                        Debug.Log($"[ONNXEngine] Model extracted to: {fullModelPath}");
-                    }
-                    else
-                    {
-                        Debug.LogError($"[ONNXEngine] Model file not found at: {fullModelPath}");
-                        isLoaded = false;
-                        return;
-                    }
+                    modelAsset = Resources.Load<NNModel>(modelPath.Replace(".onnx", "").Replace("Models/", ""));
                 }
 
-                var sessionOptions = new SessionOptions();
-                sessionOptions.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
-                sessionOptions.InterOpNumThreads = 2;
-                sessionOptions.IntraOpNumThreads = 2;
-                sessionOptions.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
+                if (modelAsset != null)
+                {
+                    runtimeModel = ModelLoader.Load(modelAsset);
+                    worker = WorkerFactory.CreateWorker(WorkerFactory.Type.CSharpBurst, runtimeModel);
+                    isLoaded = true;
+                    Debug.Log($"[ONNXEngine] Model loaded from Resources: {modelAsset.name}");
+                    return;
+                }
 
-                session = new InferenceSession(fullModelPath, sessionOptions);
+                // Try loading from persistentDataPath (copied there at runtime)
+                string persistentPath = System.IO.Path.Combine(Application.persistentDataPath, "model.onnx");
+                if (System.IO.File.Exists(persistentPath))
+                {
+                    using (var stream = System.IO.File.OpenRead(persistentPath))
+                    {
+                        runtimeModel = ModelLoader.Load(stream);
+                    }
+                    worker = WorkerFactory.CreateWorker(WorkerFactory.Type.CSharpBurst, runtimeModel);
+                    isLoaded = true;
+                    Debug.Log($"[ONNXEngine] Model loaded from persistentDataPath: {persistentPath}");
+                    return;
+                }
 
-                inputName = session.InputMetadata.Keys.First();
-                outputName = session.OutputMetadata.Keys.First();
-
-                Debug.Log($"[ONNXEngine] Model loaded successfully from: {fullModelPath}");
-                Debug.Log($"[ONNXEngine] Input: {inputName}, Output: {outputName}");
-                Debug.Log($"[ONNXEngine] Input size: {inputWidth}x{inputHeight}");
-                Debug.Log($"[ONNXEngine] Confidence threshold: {confidenceThreshold}");
-                Debug.Log($"[ONNXEngine] NMS threshold: {nmsThreshold}");
-
-                isLoaded = true;
+                Debug.LogError($"[ONNXEngine] Model not found: {modelPath}. Place the .onnx file in a Resources folder or persistentDataPath.");
+                isLoaded = false;
             }
             catch (Exception ex)
             {
@@ -117,7 +110,7 @@ namespace NomadGo.Vision
 
         public List<DetectionResult> RunInference(Texture2D frame)
         {
-            if (!isLoaded || session == null)
+            if (!isLoaded || worker == null)
             {
                 Debug.LogWarning("[ONNXEngine] Model not loaded. Skipping inference.");
                 return new List<DetectionResult>();
@@ -125,9 +118,13 @@ namespace NomadGo.Vision
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            float[] inputTensor = PreprocessFrame(frame);
+            Tensor inputTensor = PreprocessFrame(frame);
+            worker.Execute(inputTensor);
+            inputTensor.Dispose();
 
-            List<DetectionResult> rawDetections = ExecuteModel(inputTensor, frame.width, frame.height);
+            Tensor output = worker.PeekOutput();
+            List<DetectionResult> rawDetections = ParseOutput(output, frame.width, frame.height);
+            output.Dispose();
 
             List<DetectionResult> finalDetections = ApplyNMS(rawDetections);
 
@@ -142,7 +139,7 @@ namespace NomadGo.Vision
             return finalDetections;
         }
 
-        private float[] PreprocessFrame(Texture2D frame)
+        private Tensor PreprocessFrame(Texture2D frame)
         {
             RenderTexture rt = RenderTexture.GetTemporary(inputWidth, inputHeight);
             Graphics.Blit(frame, rt);
@@ -155,131 +152,75 @@ namespace NomadGo.Vision
             RenderTexture.ReleaseTemporary(rt);
 
             Color[] pixels = resized.GetPixels();
-            float[] tensor = new float[3 * inputWidth * inputHeight];
+            Destroy(resized);
 
-            for (int i = 0; i < pixels.Length; i++)
+            // Barracuda uses NHWC format: [batch=1, height, width, channels=3]
+            var tensor = new Tensor(1, inputHeight, inputWidth, 3);
+            for (int y = 0; y < inputHeight; y++)
             {
-                tensor[i] = pixels[i].r;
-                tensor[pixels.Length + i] = pixels[i].g;
-                tensor[2 * pixels.Length + i] = pixels[i].b;
+                for (int x = 0; x < inputWidth; x++)
+                {
+                    int idx = y * inputWidth + x;
+                    tensor[0, y, x, 0] = pixels[idx].r;
+                    tensor[0, y, x, 1] = pixels[idx].g;
+                    tensor[0, y, x, 2] = pixels[idx].b;
+                }
             }
 
-            Destroy(resized);
             return tensor;
         }
 
-        private List<DetectionResult> ExecuteModel(float[] inputTensor, int originalWidth, int originalHeight)
+        private List<DetectionResult> ParseOutput(Tensor output, int originalWidth, int originalHeight)
         {
             var detections = new List<DetectionResult>();
 
             try
             {
-                var tensor = new DenseTensor<float>(inputTensor, new[] { 1, 3, inputHeight, inputWidth });
-                var inputs = new List<NamedOnnxValue>
+                float scaleX = (float)originalWidth / inputWidth;
+                float scaleY = (float)originalHeight / inputHeight;
+                int numClasses = labels.Length;
+
+                // Barracuda NHWC shape: [batch, height, width, channels]
+                // YOLOv8 ONNX output [1, 4+numClasses, numAnchors] maps to NHWC [1, 1, numAnchors, 4+numClasses]
+                var shape = output.shape;
+                int numDetections = shape.width;
+                int rowSize = shape.channels;
+
+                for (int i = 0; i < numDetections; i++)
                 {
-                    NamedOnnxValue.CreateFromTensor(inputName, tensor)
-                };
+                    float cx = output[0, 0, i, 0];
+                    float cy = output[0, 0, i, 1];
+                    float w  = output[0, 0, i, 2];
+                    float h  = output[0, 0, i, 3];
 
-                using (var results = session.Run(inputs))
-                {
-                    var output = results.First();
-                    var outputTensor = output.AsTensor<float>();
-                    var outputDims = outputTensor.Dimensions.ToArray();
+                    float bestConf = 0f;
+                    int bestClass = -1;
 
-                    float scaleX = (float)originalWidth / inputWidth;
-                    float scaleY = (float)originalHeight / inputHeight;
-
-                    int numClasses = labels.Length;
-
-                    if (outputDims.Length == 3 && outputDims[0] == 1)
+                    for (int c = 0; c < numClasses && (c + 4) < rowSize; c++)
                     {
-                        int numDetections = outputDims[2];
-                        int rowSize = outputDims[1];
-
-                        for (int i = 0; i < numDetections; i++)
+                        float conf = output[0, 0, i, 4 + c];
+                        if (conf > bestConf)
                         {
-                            float cx = outputTensor[0, 0, i];
-                            float cy = outputTensor[0, 1, i];
-                            float w  = outputTensor[0, 2, i];
-                            float h  = outputTensor[0, 3, i];
-
-                            float bestConf = 0f;
-                            int bestClass = -1;
-
-                            for (int c = 0; c < numClasses && (c + 4) < rowSize; c++)
-                            {
-                                float conf = outputTensor[0, 4 + c, i];
-                                if (conf > bestConf)
-                                {
-                                    bestConf = conf;
-                                    bestClass = c;
-                                }
-                            }
-
-                            if (bestConf >= confidenceThreshold && bestClass >= 0)
-                            {
-                                float x1 = (cx - w / 2f) * scaleX;
-                                float y1 = (cy - h / 2f) * scaleY;
-                                float bw = w * scaleX;
-                                float bh = h * scaleY;
-
-                                Rect box = new Rect(x1, y1, bw, bh);
-                                string label = GetLabel(bestClass);
-
-                                detections.Add(new DetectionResult(bestClass, label, bestConf, box));
-                            }
+                            bestConf = conf;
+                            bestClass = c;
                         }
                     }
-                    else if (outputDims.Length == 2)
+
+                    if (bestConf >= confidenceThreshold && bestClass >= 0)
                     {
-                        int numDetections = outputDims[0];
-                        int colSize = outputDims[1];
+                        float x1 = (cx - w / 2f) * scaleX;
+                        float y1 = (cy - h / 2f) * scaleY;
+                        float bw = w * scaleX;
+                        float bh = h * scaleY;
 
-                        for (int i = 0; i < numDetections; i++)
-                        {
-                            float cx = outputTensor[i, 0];
-                            float cy = outputTensor[i, 1];
-                            float w  = outputTensor[i, 2];
-                            float h  = outputTensor[i, 3];
-                            float objectness = colSize > 4 ? outputTensor[i, 4] : 1.0f;
+                        Rect box = new Rect(x1, y1, bw, bh);
+                        string label = GetLabel(bestClass);
 
-                            if (objectness < confidenceThreshold) continue;
-
-                            float bestConf = 0f;
-                            int bestClass = -1;
-                            int classOffset = colSize > 5 ? 5 : 4;
-
-                            for (int c = 0; c < numClasses && (c + classOffset) < colSize; c++)
-                            {
-                                float conf = outputTensor[i, classOffset + c] * objectness;
-                                if (conf > bestConf)
-                                {
-                                    bestConf = conf;
-                                    bestClass = c;
-                                }
-                            }
-
-                            if (bestConf >= confidenceThreshold && bestClass >= 0)
-                            {
-                                float x1 = (cx - w / 2f) * scaleX;
-                                float y1 = (cy - h / 2f) * scaleY;
-                                float bw = w * scaleX;
-                                float bh = h * scaleY;
-
-                                Rect box = new Rect(x1, y1, bw, bh);
-                                string label = GetLabel(bestClass);
-
-                                detections.Add(new DetectionResult(bestClass, label, bestConf, box));
-                            }
-                        }
+                        detections.Add(new DetectionResult(bestClass, label, bestConf, box));
                     }
-                    else
-                    {
-                        Debug.LogWarning($"[ONNXEngine] Unexpected output shape: [{string.Join(", ", outputDims)}]");
-                    }
-
-                    Debug.Log($"[ONNXEngine] Raw detections: {detections.Count}");
                 }
+
+                Debug.Log($"[ONNXEngine] Raw detections: {detections.Count}");
             }
             catch (Exception ex)
             {
@@ -344,12 +285,13 @@ namespace NomadGo.Vision
 
         private void OnDestroy()
         {
-            if (session != null)
+            if (worker != null)
             {
-                session.Dispose();
-                session = null;
-                Debug.Log("[ONNXEngine] Inference session disposed.");
+                worker.Dispose();
+                worker = null;
+                Debug.Log("[ONNXEngine] Inference worker disposed.");
             }
+            runtimeModel = null;
         }
     }
 }
