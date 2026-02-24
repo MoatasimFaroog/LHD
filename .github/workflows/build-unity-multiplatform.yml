@@ -58,7 +58,8 @@ jobs:
       # تحرير مساحة القرص
       # Free disk space
       - name: Free Disk Space
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+        continue-on-error: true
 
       # بناء المشروع
       # Build project
