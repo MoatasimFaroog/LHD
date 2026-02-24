@@ -87,10 +87,8 @@ namespace NomadGo.Vision
                 string persistentPath = System.IO.Path.Combine(Application.persistentDataPath, "model.onnx");
                 if (System.IO.File.Exists(persistentPath))
                 {
-                    using (var stream = System.IO.File.OpenRead(persistentPath))
-                    {
-                        runtimeModel = ModelLoader.Load(stream);
-                    }
+                    byte[] modelBytes = System.IO.File.ReadAllBytes(persistentPath);
+                    runtimeModel = ModelLoader.Load(modelBytes);
                     worker = WorkerFactory.CreateWorker(WorkerFactory.Type.CSharpBurst, runtimeModel);
                     isLoaded = true;
                     Debug.Log($"[ONNXEngine] Model loaded from persistentDataPath: {persistentPath}");
