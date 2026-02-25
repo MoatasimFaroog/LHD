@@ -175,6 +175,18 @@ jobs:
           buildName: LHD
           versioning: Semantic
 
+      - name: Upload Unity Editor.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-editor-log
+          path: |
+            **/Editor.log
+            /github/home/.config/unity3d/Editor.log
+            /github/home/.local/share/unity3d/Editor.log
+            /root/.config/unity3d/Editor.log
+            /root/.local/share/unity3d/Editor.log
+
       # رفع ملف APK كـ artifact (يُحفظ 14 يوماً)
       # Upload APK artifact (kept for 14 days)
       - name: Upload APK artifact

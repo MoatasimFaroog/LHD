@@ -86,15 +86,17 @@ jobs:
 
       # رفع سجلات Unity كـ artifact
       # Upload Unity logs as artifact
-      - name: Upload Unity Logs (Editor.log)
+      - name: Upload Unity Editor.log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unity-logs
+          name: unity-editor-log
           path: |
-            /home/runner/.config/unity3d/Editor.log
-            /home/runner/.local/share/unity3d/Editor.log
             **/Editor.log
+            /github/home/.config/unity3d/Editor.log
+            /github/home/.local/share/unity3d/Editor.log
+            /root/.config/unity3d/Editor.log
+            /root/.local/share/unity3d/Editor.log
 
       # التحقق من مخرجات APK/AAB
       # Verify APK/AAB output
