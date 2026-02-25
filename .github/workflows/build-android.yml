@@ -84,19 +84,24 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
 
+      # Find Editor.log location inside workspace
+      - name: Find Editor.log
+        if: always()
+        shell: bash
+        run: |
+          echo "Searching for Editor.log..."
+          find . -type f -name "Editor.log" -print || true
+
       # Upload Unity logs (Editor.log) as artifact
       - name: Upload Unity Editor.log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unity-editor-log
+          if-no-files-found: warn
           path: |
-            /github/workspace/Library/Editor.log
-            /github/workspace/Library/Logs/Editor.log
-            /github/home/.config/unity3d/Editor.log
-            /github/home/.local/share/unity3d/Editor.log
-            /root/.config/unity3d/Editor.log
-            /root/.local/share/unity3d/Editor.log
+            Library/Logs/Editor.log
+            Library/Editor.log
             **/Editor.log
 
       # Verify APK/AAB output
