@@ -28,8 +28,8 @@ jobs:
     name: Build for Android
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
     steps:
-      # استنساخ المستودع مع Git LFS
       # Checkout repository with Git LFS
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +37,6 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      # تخزين مؤقت لمكتبة Unity لتسريع البناء
       # Cache Unity Library for faster builds
       - name: Cache Unity Library
         uses: actions/cache@v4
@@ -48,7 +47,6 @@ jobs:
             Library-Android-
             Library-
 
-      # التحقق من وجود الأسرار قبل البناء
       # Preflight: fail fast if required secrets are missing
       - name: Preflight (check secrets present)
         shell: bash
@@ -61,7 +59,6 @@ jobs:
           if [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ]; then echo "❌ UNITY_EMAIL or UNITY_PASSWORD is empty"; exit 1; fi
           echo "✅ Unity licensing secrets are present"
 
-      # بناء APK لنظام Android
       # Build Android APK
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
@@ -73,32 +70,35 @@ jobs:
           unityVersion: 2022.3.22f1
           targetPlatform: Android
           androidExportType: androidPackage
-          androidTargetSdkVersion: AndroidApiLevel34  # Android 14 - stable and widely adopted
-          androidKeystoreName: ${{ secrets.ANDROID_KEYSTORE_BASE64 && 'user.keystore' || '' }}
-          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+          androidTargetSdkVersion: AndroidApiLevel34
           buildName: LHD
           versioning: Semantic
           allowDirtyBuild: true
           customParameters: -logFile - -stackTraceLogType Full -nographics
 
-      # رفع سجلات Unity كـ artifact
-      # Upload Unity logs as artifact
+          # ---------- Optional signing (only if secrets exist) ----------
+          # If you don't have a keystore yet, you can ignore these secrets.
+          androidKeystoreName: user.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+
+      # Upload Unity logs (Editor.log) as artifact
       - name: Upload Unity Editor.log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unity-editor-log
           path: |
-            **/Editor.log
+            /github/workspace/Library/Editor.log
+            /github/workspace/Library/Logs/Editor.log
             /github/home/.config/unity3d/Editor.log
             /github/home/.local/share/unity3d/Editor.log
             /root/.config/unity3d/Editor.log
             /root/.local/share/unity3d/Editor.log
+            **/Editor.log
 
-      # التحقق من مخرجات APK/AAB
       # Verify APK/AAB output
       - name: Verify APK/AAB output
         if: always()
@@ -111,8 +111,7 @@ jobs:
           echo "== search for apk/aab =="
           find build -maxdepth 6 -type f \( -name "*.apk" -o -name "*.aab" \) -print || true
 
-      # رفع ملف APK كـ artifact
-      # Upload APK as artifact
+      # Upload APK/AAB as artifact
       - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
@@ -124,8 +123,7 @@ jobs:
             build/Android
           retention-days: 14
 
-      # عرض معلومات البناء
-      # Display build information
+      # Build summary
       - name: Build Summary
         if: always()
         shell: bash
@@ -137,5 +135,5 @@ jobs:
             echo "✅ APK/AAB produced:"
             find build -maxdepth 6 -type f \( -name "*.apk" -o -name "*.aab" \) -print
           else
-            echo "❌ No APK/AAB found. Check unity-logs artifact (Editor.log)."
+            echo "❌ No APK/AAB found. Check unity-editor-log artifact (Editor.log)."
           fi
