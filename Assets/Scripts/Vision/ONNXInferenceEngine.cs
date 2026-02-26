@@ -86,7 +86,12 @@ namespace NomadGo.Vision
                     return;
                 }
 
-                Debug.LogError($"[ONNXEngine] Model not found: {modelPath}. Place the .onnx file as a ModelAsset in a Resources folder.");
+                Debug.LogError(
+                    $"[ONNXEngine] Model asset not found for path \"{modelPath}\". " +
+                    "Export yolov8n.onnx with: python -m ultralytics export model=yolov8n.pt format=onnx imgsz=640 " +
+                    "then import it into Unity and place it under Assets/Resources/Models/ as a ModelAsset. " +
+                    "Inference features are disabled until the model is present."
+                );
                 isLoaded = false;
             }
             catch (Exception ex)

@@ -74,6 +74,9 @@ sysinfo.txt
 *.aab
 *.unitypackage
 
+# ONNX model weights (large binary; obtain separately — see Docs/CI_CD_SETUP.md)
+*.onnx
+
 # Crashlytics generated file
 crashlytics-build.properties
 

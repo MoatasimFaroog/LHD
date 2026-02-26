@@ -59,6 +59,31 @@ jobs:
           if [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ]; then echo "❌ UNITY_EMAIL or UNITY_PASSWORD is empty"; exit 1; fi
           echo "✅ Unity licensing secrets are present"
 
+      # Download ONNX model if YOLOV8N_ONNX_URL secret is set
+      - name: Download ONNX model
+        shell: bash
+        env:
+          YOLOV8N_ONNX_URL: ${{ secrets.YOLOV8N_ONNX_URL }}
+        run: |
+          MODEL_DIR="Assets/Resources/Models"
+          MODEL_PATH="${MODEL_DIR}/yolov8n.onnx"
+          if [ -f "$MODEL_PATH" ]; then
+            echo "✅ yolov8n.onnx already present (committed via Git LFS or prior step)."
+          elif [ -n "$YOLOV8N_ONNX_URL" ]; then
+            echo "⬇️  Downloading yolov8n.onnx from YOLOV8N_ONNX_URL..."
+            mkdir -p "$MODEL_DIR"
+            curl -fsSL "$YOLOV8N_ONNX_URL" -o "$MODEL_PATH"
+            echo "✅ yolov8n.onnx downloaded successfully."
+          else
+            echo "⚠️  yolov8n.onnx is missing and YOLOV8N_ONNX_URL secret is not set."
+            echo "   The Unity build will proceed but inference features will be disabled at runtime."
+            echo "   To enable inference:"
+            echo "     1. Export the model: python -m ultralytics export model=yolov8n.pt format=onnx imgsz=640"
+            echo "     2. Import the .onnx into Unity and place it under Assets/Resources/Models/"
+            echo "     3. (Optional) Add a YOLOV8N_ONNX_URL secret pointing to a downloadable copy."
+            echo "   See Docs/CI_CD_SETUP.md for full instructions."
+          fi
+
       # Build Android APK
       - name: Build Android APK
         uses: game-ci/unity-builder@v4

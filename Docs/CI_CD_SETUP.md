@@ -100,16 +100,46 @@ Copy the contents of `keystore.base64.txt` into the `ANDROID_KEYSTORE_BASE64` se
 
 ## Step 4: Add Your ONNX Model
 
-Before the build will work, you need to add the YOLO model:
+The YOLOv8n ONNX model is **not committed to the repository** (it is a binary weight file). You must supply it before a build can run inference. There are three supported approaches:
 
-1. Download `yolov8n.onnx` from: https://github.com/ultralytics/assets/releases
-2. Place it in: `Assets/StreamingAssets/Models/yolov8n.onnx`
-3. Commit and push:
-```powershell
-git add Assets/StreamingAssets/Models/yolov8n.onnx
-git commit -m "Add YOLO model"
+### Option A — Local build (add model directly)
+
+1. Export the model from Ultralytics:
+   ```bash
+   pip install ultralytics
+   python -m ultralytics export model=yolov8n.pt format=onnx imgsz=640
+   ```
+2. Import `yolov8n.onnx` into Unity (drag it into the Project window).
+3. **Place it at `Assets/Resources/Models/yolov8n.onnx`** inside the Unity project.
+4. Unity Sentis requires the file to be a **ModelAsset** — Unity automatically imports `.onnx` files as `ModelAsset` when placed in a project folder.
+
+> ⚠️ Do **not** push the `.onnx` file to the repository — it is excluded by `.gitignore`.
+
+### Option B — CI download via `YOLOV8N_ONNX_URL` secret (recommended for GitHub Actions)
+
+Host `yolov8n.onnx` at a stable, authenticated URL (e.g. a GitHub Release asset, private S3 bucket, or other storage). Then:
+
+1. Go to your repository: **Settings → Secrets and variables → Actions → New repository secret**
+2. Add a secret named `YOLOV8N_ONNX_URL` with the full download URL as the value.
+
+The CI workflows (`build-android.yml`, `build-unity-multiplatform.yml`) automatically download the model to `Assets/Resources/Models/yolov8n.onnx` before the Unity build step when this secret is present.
+
+If `YOLOV8N_ONNX_URL` is **not** set, the build continues without the model — inference features will be disabled at runtime with a clear log message, but the APK itself will still be produced.
+
+### Option C — Git LFS
+
+If you prefer to store the model in the repository using [Git LFS](https://git-lfs.github.com/):
+
+```bash
+git lfs install
+git lfs track "*.onnx"
+git add .gitattributes
+git add Assets/Resources/Models/yolov8n.onnx
+git commit -m "Add yolov8n.onnx via Git LFS"
 git push
 ```
+
+The CI workflows already run `actions/checkout` with `lfs: true`, so the model will be pulled automatically.
 
 ---
 
@@ -162,8 +192,8 @@ The build runs automatically when you push to `main` (only when files in `Assets
 
 ### APK crashes on device
 - Make sure your device supports ARCore
-- Check that the ONNX model is in `Assets/StreamingAssets/Models/`
-- Verify `CONFIG.json` has the correct model path
+- Check that the ONNX model is in `Assets/Resources/Models/` (see Step 4 above)
+- Verify `Assets/Resources/CONFIG.json` has the correct model path (`"path": "Models/yolov8n.onnx"`)
 
 ### Build runs out of disk space
 - The workflow includes automatic disk cleanup

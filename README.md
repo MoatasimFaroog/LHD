@@ -94,6 +94,8 @@ docker run -p 5000:5000 nomadgo-spatialvision
    - ARCore XR Plugin `5.1.2`
    - Unity Sentis `1.3.0`
 3. Place your ONNX model at `Assets/Resources/Models/yolov8n.onnx`
+   - Export with: `python -m ultralytics export model=yolov8n.pt format=onnx imgsz=640`
+   - The `.onnx` file is excluded from git (see `.gitignore`); see [`Docs/CI_CD_SETUP.md`](Docs/CI_CD_SETUP.md) for CI options
 4. **File → Build Settings → Android → Build**
 
 See [`Docs/RUNBOOK.md`](Docs/RUNBOOK.md) for the full step-by-step setup guide.
@@ -182,6 +184,7 @@ GitHub Actions workflows (`.github/workflows/`):
 | `UNITY_LICENSE` | Unity license for automated builds |
 | `UNITY_EMAIL` | Unity account e-mail |
 | `UNITY_PASSWORD` | Unity account password |
+| `YOLOV8N_ONNX_URL` | *(Optional)* Download URL for `yolov8n.onnx` — if set, the model is fetched automatically before the build; if not set, the build proceeds without the model and inference is disabled at runtime |
 
 See [`Docs/CI_CD_SETUP.md`](Docs/CI_CD_SETUP.md) for full setup instructions.
 
