@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using NomadGo.Vision;
 
@@ -30,7 +31,7 @@ namespace NomadGo.Counting
         private List<TrackedObject> trackedObjects = new List<TrackedObject>();
 
         public List<TrackedObject> TrackedObjects => trackedObjects;
-        public int ActiveTrackCount => trackedObjects.FindAll(t => t.isActive).Count;
+        public int ActiveTrackCount => trackedObjects.Count(t => t.isActive);
 
         public void Initialize(float iouThreshold, int maxAge)
         {
