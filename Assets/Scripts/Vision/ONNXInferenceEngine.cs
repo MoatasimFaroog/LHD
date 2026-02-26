@@ -41,7 +41,10 @@ namespace NomadGo.Vision
 
         private void LoadLabels()
         {
-            TextAsset labelsAsset = Resources.Load<TextAsset>(labelsPath.Replace(".txt", "").Replace("Models/", ""));
+            // Load from Resources. Expected path relative to Resources folder, without extension.
+            string resourcePath = labelsPath.Replace(".txt", "");
+            TextAsset labelsAsset = Resources.Load<TextAsset>(resourcePath);
+
             if (labelsAsset == null)
             {
                 labelsAsset = Resources.Load<TextAsset>("labels");
@@ -77,7 +80,7 @@ namespace NomadGo.Vision
                 if (modelAsset != null)
                 {
                     runtimeModel = ModelLoader.Load(modelAsset);
-                    worker = WorkerFactory.CreateWorker(BackendType.CPU, runtimeModel);
+                    worker = WorkerFactory.CreateWorker(runtimeModel, BackendType.CPU);
                     isLoaded = true;
                     Debug.Log($"[ONNXEngine] Model loaded from Resources: {modelAsset.name}");
                     return;
@@ -154,7 +157,7 @@ namespace NomadGo.Vision
                 }
             }
 
-            return new TensorFloat(new TensorShape(1, 3, inputHeight, inputWidth), data);
+            return new TensorFloat(new TensorShape(1, 3, inputHeight, inputWidth), new ReadOnlySpan<float>(data));
         }
 
         private List<DetectionResult> ParseOutput(TensorFloat output, int originalWidth, int originalHeight)
@@ -187,19 +190,25 @@ namespace NomadGo.Vision
                 int numDetections = shape[anchorDim]; // numAnchors
                 int rowSize = shape[featureDim];      // 4+numClasses
 
+                // In Sentis 1.3.0, TensorFloat doesn't support 3D indexing directly.
+                // Download to CPU once for efficiency.
+                float[] outputData = output.ToReadOnlyArray();
+
                 for (int i = 0; i < numDetections; i++)
                 {
-                    float cx = output[0, 0, i];
-                    float cy = output[0, 1, i];
-                    float w  = output[0, 2, i];
-                    float h  = output[0, 3, i];
+                    // YOLOv8 output format: [1, 4 + numClasses, numAnchors]
+                    // Indexing into flattened array: batch * rowSize * numDetections + featureIndex * numDetections + anchorIndex
+                    float cx = outputData[0 * rowSize * numDetections + 0 * numDetections + i];
+                    float cy = outputData[0 * rowSize * numDetections + 1 * numDetections + i];
+                    float w  = outputData[0 * rowSize * numDetections + 2 * numDetections + i];
+                    float h  = outputData[0 * rowSize * numDetections + 3 * numDetections + i];
 
                     float bestConf = 0f;
                     int bestClass = -1;
 
                     for (int c = 0; c < numClasses && (c + 4) < rowSize; c++)
                     {
-                        float conf = output[0, 4 + c, i];
+                        float conf = outputData[0 * rowSize * numDetections + (4 + c) * numDetections + i];
                         if (conf > bestConf)
                         {
                             bestConf = conf;
