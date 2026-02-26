@@ -74,8 +74,8 @@ sysinfo.txt
 *.aab
 *.unitypackage
 
-# ONNX model weights (large binary; obtain separately — see Docs/CI_CD_SETUP.md)
-*.onnx
+
+# *.onnx  # allowed: yolov8n.onnx added via git add -f
 
 # Crashlytics generated file
 crashlytics-build.properties
