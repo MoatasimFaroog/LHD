@@ -80,7 +80,7 @@ namespace NomadGo.Vision
                 if (modelAsset != null)
                 {
                     runtimeModel = ModelLoader.Load(modelAsset);
-                    worker = WorkerFactory.CreateWorker(runtimeModel, BackendType.CPU);
+                    worker = WorkerFactory.CreateWorker(BackendType.CPU, runtimeModel);
                     isLoaded = true;
                     Debug.Log($"[ONNXEngine] Model loaded from Resources: {modelAsset.name}");
                     return;
@@ -157,7 +157,7 @@ namespace NomadGo.Vision
                 }
             }
 
-            return new TensorFloat(new TensorShape(1, 3, inputHeight, inputWidth), new ReadOnlySpan<float>(data));
+            return new TensorFloat(new TensorShape(1, 3, inputHeight, inputWidth), data);
         }
 
         private List<DetectionResult> ParseOutput(TensorFloat output, int originalWidth, int originalHeight)
