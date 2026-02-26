@@ -80,7 +80,7 @@ namespace NomadGo.Vision
                 if (modelAsset != null)
                 {
                     runtimeModel = ModelLoader.Load(modelAsset);
-                    worker = WorkerFactory.CreateWorker(runtimeModel, BackendType.CPU);
+                    worker = WorkerFactory.CreateWorker(BackendType.CPU, runtimeModel);
                     isLoaded = true;
                     Debug.Log($"[ONNXEngine] Model loaded from Resources: {modelAsset.name}");
                     return;

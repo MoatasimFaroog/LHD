@@ -12,7 +12,6 @@ namespace NomadGo.AROverlay
 
         private CanvasGroup canvasGroup;
         private string currentText = "";
-        private bool isVisible = false;
         private float targetAlpha = 0f;
 
         private void Awake()
@@ -53,13 +52,11 @@ namespace NomadGo.AROverlay
 
         public void Show()
         {
-            isVisible = true;
             targetAlpha = 1f;
         }
 
         public void Hide()
         {
-            isVisible = false;
             targetAlpha = 0f;
         }
 
