@@ -8,7 +8,7 @@
 | Render Pipeline | **URP** (Universal Render Pipeline) | Must be selected at project creation |
 | AR Foundation | **5.1.2** | Via Unity Package Manager |
 | ARCore XR Plugin | **5.1.2** | Via Unity Package Manager |
-| ONNX Runtime for Unity | **1.16.3** | Manual import or via UPM git URL |
+| Unity Sentis | **1.3.0** | Via Unity Package Manager |
 | JDK | **17** | Required for Android builds |
 | Android SDK | API Level **34** | Install via Unity Hub > Installs > Add Modules |
 | Min Android Version | **Android 10 (API 29)** | Set in Player Settings |
@@ -49,11 +49,9 @@ Open **Window > Package Manager** and install:
 3. **TextMeshPro** (usually pre-installed)
    - Name: `com.unity.textmeshpro`
 
-4. **ONNX Runtime for Unity**
-   - Download from: https://github.com/microsoft/onnxruntime/releases
-   - Use version `1.16.3`
-   - Import the Unity package: `Microsoft.ML.OnnxRuntime.Unity.1.16.3.unitypackage`
-   - Or add via git URL: `https://github.com/microsoft/onnxruntime-unity.git`
+4. **Unity Sentis**
+   - Install via Package Manager: `com.unity.sentis`
+   - Version: `1.3.0`
 
 ### 2.4 Configure URP
 
@@ -69,8 +67,8 @@ Open **Window > Package Manager** and install:
    pip install ultralytics
    python -c "from ultralytics import YOLO; m = YOLO('yolov8n.pt'); m.export(format='onnx', imgsz=640, opset=12)"
    ```
-2. Copy `yolov8n.onnx` to `Assets/Models/`
-3. Ensure `Assets/Models/labels.txt` matches your model's class order
+2. Copy `yolov8n.onnx` to `Assets/Resources/Models/`
+3. Ensure `Assets/Resources/Models/labels.txt` matches your model's class order
 
 ---
 
@@ -300,7 +298,7 @@ If importing from scratch without the `.unity` file:
 **Fix**: Check XR Plug-in Management settings. Ensure ARCore is enabled for Android. Verify camera permissions in AndroidManifest.xml.
 
 ### 3. ONNX model fails to load
-**Fix**: Verify the model file exists at the path specified in CONFIG.json. Ensure ONNX Runtime for Unity package is imported. Check model was exported with opset 12 or higher.
+**Fix**: Verify the model file exists at the path specified in CONFIG.json. Ensure Unity Sentis package is imported. Check model was exported with opset 12 or higher and is imported as a ModelAsset.
 
 ### 4. Detections not appearing / zero count
 **Fix**: Check confidence_threshold in CONFIG.json (try lowering to 0.3). Verify labels.txt matches model output classes. Enable verbose_mode in diagnostics to see raw inference output.

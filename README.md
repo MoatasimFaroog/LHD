@@ -92,8 +92,8 @@ docker run -p 5000:5000 nomadgo-spatialvision
 2. Install packages via Package Manager:
    - AR Foundation `5.1.2`
    - ARCore XR Plugin `5.1.2`
-   - ONNX Runtime for Unity `1.16.3`
-3. Place your ONNX model at `Assets/Models/yolov8n.onnx`
+   - Unity Sentis `1.3.0`
+3. Place your ONNX model at `Assets/Resources/Models/yolov8n.onnx`
 4. **File → Build Settings → Android → Build**
 
 See [`Docs/RUNBOOK.md`](Docs/RUNBOOK.md) for the full step-by-step setup guide.
