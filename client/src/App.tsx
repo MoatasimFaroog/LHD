@@ -88,114 +88,70 @@ function App() {
   };
 
   return (
-    <div style={{
-      width: "100vw",
-      height: "100vh",
-      background: "#0a0e17",
-      color: "#e0e6ed",
-      fontFamily: "'Inter', sans-serif",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden"
-    }}>
-      <header style={{
-        background: "linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%)",
-        borderBottom: "1px solid #21262d",
-        padding: "12px 24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexShrink: 0
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{
-            width: "36px",
-            height: "36px",
-            background: "linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%)",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 700,
-            fontSize: "16px",
-            color: "#fff"
-          }}>N</div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "16px", color: "#f0f6fc" }}>NomadGo SpatialVision</div>
-            <div style={{ fontSize: "11px", color: "#8b949e" }}>Mock Sync Server &middot; v1.0.0</div>
+    <div className="w-screen h-screen bg-[#0a0e17] text-[#e0e6ed] font-['Inter',sans-serif] flex flex-col overflow-hidden">
+      {/* Header */}
+      <header className="bg-gradient-to-br from-[#1a1f2e] to-[#0d1117] border-b border-[#21262d] px-3 py-2.5 sm:px-6 sm:py-3 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-[#58a6ff] to-[#1f6feb] rounded-lg flex items-center justify-center font-bold text-sm sm:text-base text-white shrink-0">
+            N
+          </div>
+          <div className="min-w-0">
+            <div className="font-bold text-sm sm:text-base text-[#f0f6fc] truncate">NomadGo SpatialVision</div>
+            <div className="text-[10px] sm:text-[11px] text-[#8b949e]">Mock Sync Server &middot; v1.0.0</div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{
-            width: "8px", height: "8px", borderRadius: "50%",
-            background: "#3fb950", boxShadow: "0 0 6px #3fb950"
-          }} />
-          <span style={{ fontSize: "12px", color: "#8b949e" }}>Server Online</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="w-2 h-2 rounded-full bg-[#3fb950] shadow-[0_0_6px_#3fb950]" />
+          <span className="text-[11px] sm:text-xs text-[#8b949e] hidden xs:inline">Server Online</span>
         </div>
       </header>
 
-      <nav style={{
-        display: "flex",
-        gap: "0",
-        borderBottom: "1px solid #21262d",
-        background: "#0d1117",
-        flexShrink: 0
-      }}>
+      {/* Navigation Tabs */}
+      <nav className="flex border-b border-[#21262d] bg-[#0d1117] shrink-0">
         {(["dashboard", "pulses", "docs"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "10px 20px",
-              background: activeTab === tab ? "#161b22" : "transparent",
-              border: "none",
-              borderBottom: activeTab === tab ? "2px solid #58a6ff" : "2px solid transparent",
-              color: activeTab === tab ? "#f0f6fc" : "#8b949e",
-              fontWeight: activeTab === tab ? 600 : 400,
-              fontSize: "13px",
-              cursor: "pointer",
-              textTransform: "capitalize",
-              fontFamily: "'Inter', sans-serif"
-            }}
-          >{tab}</button>
+            className={`flex-1 sm:flex-none px-4 sm:px-5 py-2.5 sm:py-2.5 border-b-2 text-xs sm:text-[13px] capitalize font-['Inter',sans-serif] transition-colors min-h-[44px] sm:min-h-0 ${
+              activeTab === tab
+                ? "bg-[#161b22] border-[#58a6ff] text-[#f0f6fc] font-semibold"
+                : "bg-transparent border-transparent text-[#8b949e] font-normal"
+            }`}
+          >
+            {tab}
+          </button>
         ))}
       </nav>
 
-      <main style={{
-        flex: 1,
-        overflow: "auto",
-        padding: "20px 24px"
-      }}>
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto p-3 sm:p-5 overscroll-contain">
         {activeTab === "dashboard" && (
           <div>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
-              <StatCard title="Total Pulses" value={stats?.totalPulses ?? 0} color="#58a6ff" />
-              <StatCard title="Sessions" value={stats?.uniqueSessions ?? 0} color="#3fb950" />
-              <StatCard title="Devices" value={stats?.uniqueDevices ?? 0} color="#d29922" />
-              <StatCard title="Uptime" value={stats ? formatUptime(stats.serverUptime) : "—"} color="#bc8cff" />
+            {/* Stat Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
+              <StatCard title="Total Pulses" value={stats?.totalPulses ?? 0} color="text-[#58a6ff]" />
+              <StatCard title="Sessions" value={stats?.uniqueSessions ?? 0} color="text-[#3fb950]" />
+              <StatCard title="Devices" value={stats?.uniqueDevices ?? 0} color="text-[#d29922]" />
+              <StatCard title="Uptime" value={stats ? formatUptime(stats.serverUptime) : "—"} color="text-[#bc8cff]" />
             </div>
 
-            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
-              <ActionButton label="Send Test Pulse" onClick={sendTestPulse} color="#238636" />
-              <ActionButton label="Clear All" onClick={clearPulses} color="#da3633" />
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2 mb-4 sm:mb-5">
+              <ActionButton label="Send Test Pulse" onClick={sendTestPulse} bgColor="bg-[#238636]" />
+              <ActionButton label="Clear All" onClick={clearPulses} bgColor="bg-[#da3633]" />
               <ActionButton
                 label={autoRefresh ? "Auto-refresh: ON" : "Auto-refresh: OFF"}
                 onClick={() => setAutoRefresh(!autoRefresh)}
-                color={autoRefresh ? "#1f6feb" : "#484f58"}
+                bgColor={autoRefresh ? "bg-[#1f6feb]" : "bg-[#484f58]"}
               />
-              <ActionButton label="Refresh Now" onClick={fetchData} color="#30363d" />
+              <ActionButton label="Refresh Now" onClick={fetchData} bgColor="bg-[#30363d]" />
             </div>
 
+            {/* Latest Pulse */}
             {stats?.latestPulse && (
-              <div style={{
-                background: "#161b22",
-                border: "1px solid #21262d",
-                borderRadius: "8px",
-                padding: "16px",
-                marginBottom: "20px"
-              }}>
-                <div style={{ fontSize: "13px", color: "#8b949e", marginBottom: "8px", fontWeight: 600 }}>Latest Pulse</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "8px" }}>
+              <div className="bg-[#161b22] border border-[#21262d] rounded-lg p-3 sm:p-4 mb-4 sm:mb-5">
+                <div className="text-[13px] text-[#8b949e] mb-2 font-semibold">Latest Pulse</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
                   <InfoItem label="Pulse ID" value={stats.latestPulse.pulseId || "—"} />
                   <InfoItem label="Session" value={stats.latestPulse.sessionId} />
                   <InfoItem label="Total Count" value={String(stats.latestPulse.totalCount)} />
@@ -204,18 +160,16 @@ function App() {
                   <InfoItem label="Time" value={new Date(stats.latestPulse.timestamp).toLocaleTimeString()} />
                 </div>
                 {stats.latestPulse.countsByLabel && stats.latestPulse.countsByLabel.length > 0 && (
-                  <div style={{ marginTop: "12px" }}>
-                    <div style={{ fontSize: "12px", color: "#8b949e", marginBottom: "6px" }}>Counts by Label:</div>
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  <div className="mt-3">
+                    <div className="text-xs text-[#8b949e] mb-1.5">Counts by Label:</div>
+                    <div className="flex gap-1.5 flex-wrap">
                       {stats.latestPulse.countsByLabel.map((lc, i) => (
-                        <span key={i} style={{
-                          background: "#1f6feb20",
-                          border: "1px solid #1f6feb40",
-                          borderRadius: "12px",
-                          padding: "3px 10px",
-                          fontSize: "12px",
-                          color: "#58a6ff"
-                        }}>{lc.label}: {lc.count}</span>
+                        <span
+                          key={i}
+                          className="bg-[#1f6feb20] border border-[#1f6feb40] rounded-full px-2.5 py-0.5 text-xs text-[#58a6ff]"
+                        >
+                          {lc.label}: {lc.count}
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -223,16 +177,10 @@ function App() {
               </div>
             )}
 
-            <div style={{
-              background: "#161b22",
-              border: "1px solid #21262d",
-              borderRadius: "8px",
-              padding: "16px"
-            }}>
-              <div style={{ fontSize: "13px", color: "#8b949e", marginBottom: "12px", fontWeight: 600 }}>
-                API Endpoints
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {/* API Endpoints */}
+            <div className="bg-[#161b22] border border-[#21262d] rounded-lg p-3 sm:p-4">
+              <div className="text-[13px] text-[#8b949e] mb-3 font-semibold">API Endpoints</div>
+              <div className="flex flex-col gap-1.5">
                 <EndpointRow method="POST" path="/api/pulse" desc="Receive sync pulse from device" />
                 <EndpointRow method="GET" path="/api/pulses" desc="List all received pulses (last 50)" />
                 <EndpointRow method="GET" path="/api/pulses/session/:id" desc="Get pulses for a session" />
@@ -246,40 +194,17 @@ function App() {
 
         {activeTab === "pulses" && (
           <div>
-            <div style={{ fontSize: "13px", color: "#8b949e", marginBottom: "12px" }}>
+            <div className="text-[13px] text-[#8b949e] mb-3">
               Showing {pulses.length} most recent pulses
             </div>
             {pulses.length === 0 ? (
-              <div style={{
-                background: "#161b22",
-                border: "1px solid #21262d",
-                borderRadius: "8px",
-                padding: "40px",
-                textAlign: "center",
-                color: "#484f58"
-              }}>
+              <div className="bg-[#161b22] border border-[#21262d] rounded-lg p-8 sm:p-10 text-center text-[#484f58]">
                 No pulses received yet. Send a test pulse or connect your Unity app.
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div className="flex flex-col gap-2">
                 {pulses.map((p, i) => (
-                  <div key={i} style={{
-                    background: "#161b22",
-                    border: "1px solid #21262d",
-                    borderRadius: "6px",
-                    padding: "12px 16px",
-                    display: "grid",
-                    gridTemplateColumns: "120px 1fr 80px 60px 140px",
-                    alignItems: "center",
-                    gap: "12px",
-                    fontSize: "13px"
-                  }}>
-                    <span style={{ color: "#58a6ff", fontFamily: "monospace", fontSize: "12px" }}>{p.pulseId || "—"}</span>
-                    <span style={{ color: "#8b949e" }}>{p.sessionId}</span>
-                    <span style={{ color: "#3fb950", fontWeight: 600 }}>Count: {p.totalCount}</span>
-                    <span style={{ color: "#d29922" }}>R{p.rowCount}</span>
-                    <span style={{ color: "#484f58", fontSize: "11px" }}>{new Date(p.timestamp).toLocaleString()}</span>
-                  </div>
+                  <PulseCard key={i} pulse={p} />
                 ))}
               </div>
             )}
@@ -287,33 +212,19 @@ function App() {
         )}
 
         {activeTab === "docs" && (
-          <div style={{
-            background: "#161b22",
-            border: "1px solid #21262d",
-            borderRadius: "8px",
-            padding: "24px",
-            maxWidth: "800px",
-            lineHeight: "1.6"
-          }}>
-            <h2 style={{ color: "#f0f6fc", marginTop: 0, fontSize: "20px" }}>NomadGo SpatialVision — Mock Server</h2>
-            <p style={{ color: "#8b949e", fontSize: "14px" }}>
+          <div className="bg-[#161b22] border border-[#21262d] rounded-lg p-4 sm:p-6 max-w-3xl leading-relaxed">
+            <h2 className="text-[#f0f6fc] mt-0 text-lg sm:text-xl font-bold">NomadGo SpatialVision — Mock Server</h2>
+            <p className="text-[#8b949e] text-sm">
               This is the mock sync server for the NomadGo SpatialVision Unity AR application.
               It receives sync pulses from the mobile device during inventory scanning sessions.
             </p>
 
-            <h3 style={{ color: "#f0f6fc", fontSize: "16px", marginTop: "24px" }}>Configuration</h3>
-            <p style={{ color: "#8b949e", fontSize: "14px" }}>
-              In your Unity project, set the sync base URL in <code style={{ background: "#0d1117", padding: "2px 6px", borderRadius: "4px", color: "#58a6ff" }}>Assets/Resources/CONFIG.json</code>:
+            <h3 className="text-[#f0f6fc] text-sm sm:text-base mt-6 font-semibold">Configuration</h3>
+            <p className="text-[#8b949e] text-sm">
+              In your Unity project, set the sync base URL in{" "}
+              <code className="bg-[#0d1117] px-1.5 py-0.5 rounded text-[#58a6ff] text-xs">Assets/Resources/CONFIG.json</code>:
             </p>
-            <pre style={{
-              background: "#0d1117",
-              border: "1px solid #21262d",
-              borderRadius: "6px",
-              padding: "12px",
-              fontSize: "13px",
-              color: "#e6edf3",
-              overflow: "auto"
-            }}>{`{
+            <pre className="bg-[#0d1117] border border-[#21262d] rounded-md p-3 text-xs sm:text-[13px] text-[#e6edf3] overflow-x-auto whitespace-pre-wrap break-words sm:whitespace-pre sm:break-normal">{`{
   "sync": {
     "base_url": "https://YOUR_REPLIT_URL/api/pulse",
     "pulse_interval_seconds": 5,
@@ -324,16 +235,8 @@ function App() {
   }
 }`}</pre>
 
-            <h3 style={{ color: "#f0f6fc", fontSize: "16px", marginTop: "24px" }}>Pulse Payload Format</h3>
-            <pre style={{
-              background: "#0d1117",
-              border: "1px solid #21262d",
-              borderRadius: "6px",
-              padding: "12px",
-              fontSize: "13px",
-              color: "#e6edf3",
-              overflow: "auto"
-            }}>{`{
+            <h3 className="text-[#f0f6fc] text-sm sm:text-base mt-6 font-semibold">Pulse Payload Format</h3>
+            <pre className="bg-[#0d1117] border border-[#21262d] rounded-md p-3 text-xs sm:text-[13px] text-[#e6edf3] overflow-x-auto whitespace-pre-wrap break-words sm:whitespace-pre sm:break-normal">{`{
   "pulseId": "a1b2c3d4",
   "sessionId": "session_abc123",
   "timestamp": "2026-02-13T10:30:00.000Z",
@@ -349,33 +252,25 @@ function App() {
   "status": "pending"
 }`}</pre>
 
-            <h3 style={{ color: "#f0f6fc", fontSize: "16px", marginTop: "24px" }}>Project Structure</h3>
-            <pre style={{
-              background: "#0d1117",
-              border: "1px solid #21262d",
-              borderRadius: "6px",
-              padding: "12px",
-              fontSize: "12px",
-              color: "#e6edf3",
-              overflow: "auto"
-            }}>{`NomadGo-SpatialVision/
+            <h3 className="text-[#f0f6fc] text-sm sm:text-base mt-6 font-semibold">Project Structure</h3>
+            <pre className="bg-[#0d1117] border border-[#21262d] rounded-md p-3 text-[11px] sm:text-xs text-[#e6edf3] overflow-x-auto whitespace-pre-wrap break-words sm:whitespace-pre sm:break-normal">{`NomadGo-SpatialVision/
 ├── Assets/
 │   ├── Scenes/Main.unity
 │   ├── Scripts/
-│   │   ├── AppShell/        (AppManager, AppConfig, ScanUIController)
-│   │   ├── Spatial/         (SpatialManager, PlaneDetector, DepthEstimator)
-│   │   ├── Vision/          (ONNXInferenceEngine, DetectionResult, FrameProcessor)
-│   │   ├── Counting/        (CountManager, IOUTracker, RowClusterEngine)
-│   │   ├── AROverlay/       (OverlayRenderer, BoundingBoxDrawer, CountLabel)
-│   │   ├── Storage/         (SessionStorage, JSONStorageProvider, SessionData)
-│   │   ├── Sync/            (SyncPulseManager, PulseQueue, NetworkMonitor)
-│   │   └── Diagnostics/     (DiagnosticsManager, FPSOverlay, InferenceTimer, MemoryMonitor)
-│   ├── Models/              (yolov8n.onnx, labels.txt)
+│   │   ├── AppShell/
+│   │   ├── Spatial/
+│   │   ├── Vision/
+│   │   ├── Counting/
+│   │   ├── AROverlay/
+│   │   ├── Storage/
+│   │   ├── Sync/
+│   │   └── Diagnostics/
+│   ├── Models/
 │   └── Resources/CONFIG.json
 ├── Docs/
 │   ├── RUNBOOK.md
 │   └── QA_CHECKLIST.md
-└── MockServer/              (This Replit server)`}</pre>
+└── MockServer/`}</pre>
           </div>
         )}
       </main>
@@ -383,79 +278,96 @@ function App() {
   );
 }
 
+/* ─── Sub-components ─── */
+
 function StatCard({ title, value, color }: { title: string; value: string | number; color: string }) {
   return (
-    <div style={{
-      background: "#161b22",
-      border: "1px solid #21262d",
-      borderRadius: "8px",
-      padding: "16px 20px",
-      minWidth: "140px",
-      flex: "1"
-    }}>
-      <div style={{ fontSize: "11px", color: "#8b949e", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>{title}</div>
-      <div style={{ fontSize: "24px", fontWeight: 700, color }}>{value}</div>
+    <div className="bg-[#161b22] border border-[#21262d] rounded-lg p-3 sm:p-4 min-w-0">
+      <div className="text-[10px] sm:text-[11px] text-[#8b949e] uppercase tracking-wide mb-1">{title}</div>
+      <div className={`text-lg sm:text-2xl font-bold ${color} truncate`}>{value}</div>
     </div>
   );
 }
 
-function ActionButton({ label, onClick, color }: { label: string; onClick: () => void; color: string }) {
+function ActionButton({ label, onClick, bgColor }: { label: string; onClick: () => void; bgColor: string }) {
   return (
     <button
       onClick={onClick}
-      style={{
-        padding: "6px 14px",
-        background: color,
-        border: "1px solid transparent",
-        borderRadius: "6px",
-        color: "#f0f6fc",
-        fontSize: "12px",
-        fontWeight: 500,
-        cursor: "pointer",
-        fontFamily: "'Inter', sans-serif"
-      }}
-    >{label}</button>
+      className={`${bgColor} px-3 sm:px-3.5 py-2 sm:py-1.5 border border-transparent rounded-md text-[#f0f6fc] text-[11px] sm:text-xs font-medium font-['Inter',sans-serif] active:opacity-80 transition-opacity min-h-[44px] sm:min-h-0 touch-manipulation`}
+    >
+      {label}
+    </button>
   );
 }
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div style={{ fontSize: "11px", color: "#484f58" }}>{label}</div>
-      <div style={{ fontSize: "13px", color: "#e6edf3", fontFamily: "monospace" }}>{value}</div>
+    <div className="min-w-0">
+      <div className="text-[10px] sm:text-[11px] text-[#484f58]">{label}</div>
+      <div className="text-xs sm:text-[13px] text-[#e6edf3] font-mono truncate">{value}</div>
+    </div>
+  );
+}
+
+function PulseCard({ pulse }: { pulse: PulseData }) {
+  return (
+    <div className="bg-[#161b22] border border-[#21262d] rounded-md p-3 sm:p-3">
+      {/* Mobile: stacked card layout / Desktop: grid row */}
+      <div className="flex flex-col gap-2 sm:hidden">
+        <div className="flex items-center justify-between">
+          <span className="text-[#58a6ff] font-mono text-xs truncate max-w-[50%]">{pulse.pulseId || "—"}</span>
+          <span className="text-[#3fb950] font-semibold text-xs">Count: {pulse.totalCount}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[#8b949e] text-xs truncate max-w-[60%]">{pulse.sessionId}</span>
+          <span className="text-[#d29922] text-xs">R{pulse.rowCount}</span>
+        </div>
+        <div className="text-[#484f58] text-[10px]">{new Date(pulse.timestamp).toLocaleString()}</div>
+        {pulse.countsByLabel && pulse.countsByLabel.length > 0 && (
+          <div className="flex gap-1 flex-wrap">
+            {pulse.countsByLabel.map((lc, i) => (
+              <span
+                key={i}
+                className="bg-[#1f6feb15] border border-[#1f6feb30] rounded-full px-2 py-0.5 text-[10px] text-[#58a6ff]"
+              >
+                {lc.label}: {lc.count}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: grid row */}
+      <div className="hidden sm:grid sm:grid-cols-[minmax(100px,1fr)_minmax(120px,2fr)_80px_50px_140px] items-center gap-3 text-[13px]">
+        <span className="text-[#58a6ff] font-mono text-xs truncate">{pulse.pulseId || "—"}</span>
+        <span className="text-[#8b949e] truncate">{pulse.sessionId}</span>
+        <span className="text-[#3fb950] font-semibold">Count: {pulse.totalCount}</span>
+        <span className="text-[#d29922]">R{pulse.rowCount}</span>
+        <span className="text-[#484f58] text-[11px]">{new Date(pulse.timestamp).toLocaleString()}</span>
+      </div>
     </div>
   );
 }
 
 function EndpointRow({ method, path, desc }: { method: string; path: string; desc: string }) {
-  const methodColors: Record<string, string> = {
-    GET: "#3fb950",
-    POST: "#58a6ff",
-    DELETE: "#da3633",
-    PUT: "#d29922"
+  const methodColorMap: Record<string, string> = {
+    GET: "bg-[#3fb95020] text-[#3fb950]",
+    POST: "bg-[#58a6ff20] text-[#58a6ff]",
+    DELETE: "bg-[#da363320] text-[#da3633]",
+    PUT: "bg-[#d2992220] text-[#d29922]"
   };
 
+  const colorClasses = methodColorMap[method] || "bg-[#484f5820] text-[#484f58]";
+
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-      padding: "6px 0",
-      borderBottom: "1px solid #21262d10"
-    }}>
-      <span style={{
-        background: (methodColors[method] || "#484f58") + "20",
-        color: methodColors[method] || "#484f58",
-        padding: "2px 8px",
-        borderRadius: "4px",
-        fontSize: "11px",
-        fontWeight: 700,
-        fontFamily: "monospace",
-        minWidth: "52px",
-        textAlign: "center"
-      }}>{method}</span>
-      <span style={{ color: "#e6edf3", fontFamily: "monospace", fontSize: "13px", minWidth: "220px" }}>{path}</span>
-      <span style={{ color: "#8b949e", fontSize: "12px" }}>{desc}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-1.5 border-b border-[#21262d]/10 last:border-b-0">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <span className={`${colorClasses} px-2 py-0.5 rounded text-[11px] font-bold font-mono min-w-[52px] text-center shrink-0`}>
+          {method}
+        </span>
+        <span className="text-[#e6edf3] font-mono text-xs sm:text-[13px] sm:min-w-[220px] truncate">{path}</span>
+      </div>
+      <span className="text-[#8b949e] text-[11px] sm:text-xs pl-[68px] sm:pl-0">{desc}</span>
     </div>
   );
 }
