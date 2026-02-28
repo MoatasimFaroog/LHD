@@ -13,7 +13,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
-  pull_request:
+  # pull_request_target يمرر الـ Secrets بعكس pull_request
+  pull_request_target:
     branches:
       - main
     paths:
@@ -35,11 +36,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          # Node 22 مطلوب لدعم import.meta.dirname المستخدم في server/vite.ts
+          node-version: '22.x'
           cache: 'npm'
 
       # Cache node_modules لتسريع البناء
