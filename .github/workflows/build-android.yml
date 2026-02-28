@@ -11,7 +11,10 @@ on:
       - 'Assets/**'
       - 'Packages/**'
       - 'ProjectSettings/**'
-  pull_request:
+  # ملاحظة: تم استخدام pull_request_target بدلاً من pull_request
+  # لأن pull_request لا يمرر الـ Secrets للـ workflow
+  # pull_request_target يعمل في سياق الـ base branch ويمكنه قراءة الـ Secrets
+  pull_request_target:
     branches:
       - main
     paths:
@@ -31,9 +34,12 @@ jobs:
 
     steps:
       # Checkout repository with Git LFS
+      # عند استخدام pull_request_target، يجب تحديد ref الـ PR يدوياً
+      # لأن pull_request_target يستخدم base branch افتراضياً
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           lfs: true
 

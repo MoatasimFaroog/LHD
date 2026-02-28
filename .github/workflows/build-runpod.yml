@@ -106,7 +106,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          # Node 22 مطلوب لدعم import.meta.dirname المستخدم في server/vite.ts
+          node-version: '22.x'
           cache: 'npm'
 
       # تثبيت الاعتماديات
