@@ -80,7 +80,7 @@ namespace NomadGo.Vision
                 if (modelAsset != null)
                 {
                     runtimeModel = ModelLoader.Load(modelAsset);
-                    worker = WorkerFactory.CreateWorker(runtimeModel, BackendType.CPU);
+                    worker = WorkerFactory.CreateWorker(BackendType.CPU, runtimeModel);
                     isLoaded = true;
                     Debug.Log($"[ONNXEngine] Model loaded from Resources: {modelAsset.name}");
                     return;
@@ -117,6 +117,7 @@ namespace NomadGo.Vision
             inputTensor.Dispose();
 
             TensorFloat output = worker.PeekOutput() as TensorFloat;
+            output.CompleteOperationsAndDownload();
             List<DetectionResult> rawDetections = ParseOutput(output, frame.width, frame.height);
             output.Dispose();
 
