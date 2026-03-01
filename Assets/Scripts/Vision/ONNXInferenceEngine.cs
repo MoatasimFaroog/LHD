@@ -117,6 +117,7 @@ namespace NomadGo.Vision
             inputTensor.Dispose();
 
             TensorFloat output = worker.PeekOutput() as TensorFloat;
+            output.CompleteOperationsAndDownload();
             List<DetectionResult> rawDetections = ParseOutput(output, frame.width, frame.height);
             output.Dispose();
 
